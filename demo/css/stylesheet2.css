@@ -1,0 +1,15 @@
+.file2 #special {
+    font-size: 1.5em;
+    color: #F737FF;
+}
+
+.file2 #special2 {
+    letter-spacing: 0;
+}
+
+.box {
+    border: 2px solid #aaa;
+    -webkit-border-radius: 5px;
+    background: #eee;
+    padding: 5px;
+}

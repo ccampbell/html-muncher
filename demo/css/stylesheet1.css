@@ -1,0 +1,42 @@
+body {
+    font-family: helvetica;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2em;
+}
+
+.red {
+    color: red;
+}
+
+.blue {
+    color: blue;
+}
+
+.green {
+    color: green;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+#special {
+    color: orange;
+    font-style: italic;
+}
+
+.italic {
+    font-style: italic;
+}
+
+#special2 {
+    letter-spacing: .5em;
+    color: grey;
+}
+
+#new_id, #special, #special2 {
+    font-size: 1em;
+}
