@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
 # Copyright 2010 Craig Campbell
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import sys, glob, re, math, os, shutil
+from optimizer import VarFactory
 
 def show_usage():
     print "USAGE:"
@@ -99,53 +100,44 @@ try:
 except:
     pass
 
-#
-# adds ids to the master list of ids
-#
-# @param list ids_found
-# @return void
-#
 def addIds(ids_found):
+    '''adds ids to the master list of ids
+
+    keyword arguments:
+    ids_found -- list to add to global array
+
+    returns void'''
+
     for id in ids_found:
         if id[1] is ';':
             continue
         if id[0] not in all_ids:
             all_ids.append(id[0])
 
-#
-# adds classes to the master list of classes
-#
-# @param list classes_found
-# @return void
-#
 def addClasses(classes_found):
+    '''adds classes to the master list of classes
+
+    keyword arguments:
+    classes_found -- list of classes to add to global array
+
+    returns void'''
+
     for class_name in classes_found:
         if class_name not in all_classes:
             all_classes.append(class_name)
 
-#
-# gets the letter of the class based on what number class or id this is
-#
-# @param int index
-# @return string
-#
-def getLetterAtIndex(index):
-    letter_count = int(math.ceil(index / 26) + 1)
-    letter = letters[index % 26]
-    string = ''
-    for i in range(0, letter_count):
-        string = string + letter
-    return string
-
-#
-# replaces css rules with optimized names
-#
-# @todo use regex here?
-# @param dictionary dictionary
-# @param string content
-# @return string
-#
 def replaceCss(dictionary, content):
+    ''' replaces css rules with optimized names
+
+    todo:
+    use regex here?
+
+    keyword arguments:
+    dictionary -- dictionary mapping old class names to new ones
+    content -- string of content to replace
+
+    returns string'''
+
     for key, value in dictionary.items():
         content = content.replace(key + "{", value + "{")
         content = content.replace(key + " {", value + " {")
@@ -154,33 +146,40 @@ def replaceCss(dictionary, content):
         content = content.replace(key + ".", value + ".")
         content = content.replace(key + " .", value + " .")
         content = content.replace(key + ",", value + ",")
-        
+
         # case if the style is followed by another tag
         content = content.replace(key + " ", value + " ")
     return content
 
-#
-# replaces classes and ids with new values in a view file
-#
-# @uses replaceHtml
-# @param string file_path
-# @return string
-#
 def optimizeHtml(file_path):
+    ''' replaces classes and ids with new values in a view file
+
+    uses:
+    replaceHtml
+
+    keyword arguments:
+    file_path -- string path to file to optimize
+
+    returns string'''
+
     file = open(file_path)
     contents = file.read()
     contents = replaceHtml(id_map, contents)
     contents = replaceHtml(class_map, contents)
     return contents
 
-#
-# replaces html in views from lists of classes and ids
-#
-# @param dictionary dictionary
-# @param string content
-# return string
-#
 def replaceHtml(dictionary, content):
+    ''' replaces classes and ids with optimized names in html file
+
+    todo:
+    use regex here?
+
+    keyword arguments:
+    dictionary -- dictionary mapping old class names to new ones
+    content -- string of content to replace
+
+    returns string'''
+
     initial_content = content
     for key, value in dictionary.items():
         first_char = key[0]
@@ -230,12 +229,12 @@ for file in files:
 # .a => .killer_class, #a => #sweet_id
 class_map = {}
 for class_name in all_classes:
-    class_map[class_name] = "." + getLetterAtIndex(class_index)
+    class_map[class_name] = "." + VarFactory.getNext("class")
     class_index = class_index + 1
 
 id_map = {}
 for id in all_ids:
-    id_map[id] = "#" + getLetterAtIndex(id_index)
+    id_map[id] = "#" + VarFactory.getNext("id")
     id_index = id_index + 1
 
 ####################
@@ -249,7 +248,7 @@ if single_file_mode:
         match = replaceCss(class_map, match)
         match = replaceCss(id_map, match)
         result_css = result_css + match
-    
+
     from minimize import minimize
     result_css = minimize(result_css)
     html = html.replace(matches[0], result_css)
