@@ -24,7 +24,7 @@ def show_usage():
     print "./optimize.py path/to/single/file.html\n"
     print "OPTIONAL PARAMS:"
     print "--css-file {file_name}       file to use for optimized css (defaults to optimized.css)"
-    print "--view-ext {extension}       sets the extension to use for the view directory (defaults to html)"
+    print "--view-ext {extension}       sets the extension to look for the view directory (defaults to html)"
     print "--rewrite-css                if this arg is present then header css includes are rewritten in the new views"
     print "--help                       shows this menu"
 
@@ -84,11 +84,6 @@ if single_file_mode:
         os.unlink(single_file_opt_path)
     except:
         pass
-
-try:
-    os.unlink(css_dir + "/" + css_file)
-except:
-    pass
 
 try:
     os.unlink(css_dir + "/" + css_file)
