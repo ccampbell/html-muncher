@@ -39,5 +39,5 @@ def minimize(css):
         # output rule if it contains any declarations
         if properties:
             new_css = new_css + "%s{%s}" % ( ','.join( selectors ), ''.join(['%s:%s;' % (key, properties[key]) for key in porder])[:-1] )
-    
+
     return new_css
