@@ -1,0 +1,111 @@
+<html>
+<head>
+    <title>view with inline styles</title>
+    <style type="text/css">
+        .content {
+            padding: 25px 0px 50px 0px;
+            overflow: hidden;
+        }
+
+        a {
+            color: #FF5F1E;
+        }
+
+        .content, #footer {
+            width: 800px;
+        }
+
+        ul.menu {
+            width: 200px;
+            float: left;
+        }
+
+        #main {
+            width: 500px;
+            float: left;
+        }
+
+        ul {
+            padding: 0px;
+            margin: 0px;
+            list-style: none;
+        }
+
+        ul li {
+            margin-top: 20px;
+        }
+
+        ul li.first_child {
+            margin-top: 0px;
+        }
+
+        .box {
+            width: 500px;
+            border: 1px solid #aaa;
+            padding: 5px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .green {
+            background: #ACFFB9;
+        }
+
+        .blue {
+            background: #C5D7FF;
+        }
+
+        #footer ul {
+            text-align: center;
+        }
+
+        #footer ul li {
+            display: inline;
+            margin-left: 20px;
+        }
+
+        #footer ul li.first_child {
+            margin-left: 0px;
+        }
+        
+        p.special span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>test page with inline styles</h1>
+
+    <div class="content">
+        <ul class="menu">
+            <li class="first_child"><a href="#">link 1</a></li>
+            <li><a href="#">link 2</a></li>
+            <li><a href="#">link 3</a></li>
+            <li><a href="#">link 4</a></li>
+            <li><a href="#">link 5</a></li>
+        </ul>
+
+        <div id="main">
+            <div class="box green">
+                <p>this is a green box</p>
+            </div>
+
+            <div class="box blue">
+                <p>this is a blue box</p>
+            </div>
+
+            <p class="special">this is <span>paragraph</span></p>
+        </div>
+    </div>
+
+    <div id="footer">
+        <ul>
+            <li class="first_child"><a href="#">footer link 1</a></li>
+            <li><a href="#">footer link 2</a></li>
+            <li><a href="#">footer link 3</a></li>
+            <li><a href="#">footer link 4</a></li>
+        </ul>
+    </div>
+</body>
+</html>

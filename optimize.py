@@ -18,20 +18,33 @@ import sys, glob, re, math, os, shutil
 
 def show_usage():
     print "USAGE:"
-    print "./optimize.py path/to/css path/to/views\n"
+    print "./optimize.py path/to/css path/to/views"
+    print "OR"
+    print "./optimize.py path/to/single/file.html\n"
     print "OPTIONAL PARAMS:"
     print "--css-file {file_name}       file to use for optimized css (defaults to optimized.css)"
     print "--view-ext {extension}       sets the extension to use for the view directory (defaults to html)"
     print "--rewrite-css                if this arg is present then header css includes are rewritten in the new views"
     print "--help                       shows this menu"
 
+# if we only pass in one argument let's assume we are running in single file mode
+single_file_mode = False
+if len(sys.argv) == 2:
+    single_file_mode = True
+    single_file_path = sys.argv[1]
+    if not os.path.isfile(single_file_path):
+        print "file does not exist at path: " + single_file_path
+        sys.exit()
+
 # required arguments
-try:
-    css_dir = sys.argv[1].rstrip("/")
-    view_dir = sys.argv[2].rstrip("/")
-except IndexError:
-    show_usage()
-    sys.exit()
+if single_file_mode is False:
+    try:
+        css_dir = sys.argv[1].rstrip("/")
+        view_dir = sys.argv[2].rstrip("/")
+    except IndexError:
+        show_usage()
+        sys.exit()
+
 
 # properties
 css_file = "optimized.css"
@@ -43,7 +56,7 @@ all_classes = []
 id_index = 0
 class_index = 0
 relative_path = ""
-if view_dir.count('/') == css_dir.count('/'):
+if single_file_mode is False and view_dir.count('/') == css_dir.count('/'):
     relative_path = "../"
 
 # check for optional parameters
@@ -61,7 +74,21 @@ for key, arg in enumerate(sys.argv):
 
 css_file_minimized = css_file.replace(".css", ".min.css");
 
-# remove the css file we are going to be recreating
+if single_file_mode:
+    single_file_extension = single_file_path.split(".").pop()
+    single_file_opt_path = single_file_path.replace("." + single_file_extension, ".opt." + single_file_extension)
+
+    # remove the files we are going to be recreating
+    try:
+        os.unlink(single_file_opt_path)
+    except:
+        pass
+
+try:
+    os.unlink(css_dir + "/" + css_file)
+except:
+    pass
+
 try:
     os.unlink(css_dir + "/" + css_file)
 except:
@@ -113,6 +140,7 @@ def getLetterAtIndex(index):
 #
 # replaces css rules with optimized names
 #
+# @todo use regex here?
 # @param dictionary dictionary
 # @param string content
 # @return string
@@ -126,6 +154,9 @@ def replaceCss(dictionary, content):
         content = content.replace(key + ".", value + ".")
         content = content.replace(key + " .", value + " .")
         content = content.replace(key + ",", value + ",")
+        
+        # case if the style is followed by another tag
+        content = content.replace(key + " ", value + " ")
     return content
 
 #
@@ -173,7 +204,13 @@ def replaceHtml(dictionary, content):
 
 
 # loop through the css files once to get all the classes and ids we are going to need
-files = glob.glob(css_dir + "/*.css")
+files = []
+
+if single_file_mode:
+    files.append(single_file_path)
+else:
+    files = glob.glob(css_dir + "/*.css")
+
 for file in files:
     file = open(file, "r")
     contents = file.read()
@@ -200,6 +237,28 @@ id_map = {}
 for id in all_ids:
     id_map[id] = "#" + getLetterAtIndex(id_index)
     id_index = id_index + 1
+
+####################
+# single file mode #
+####################
+if single_file_mode:
+    html = optimizeHtml(single_file_path)
+    matches = re.compile(r'\<style type=\"text\/css\"\>(.*?)\<\/style\>', re.DOTALL).findall(html)
+    result_css = ''
+    for match in matches:
+        match = replaceCss(class_map, match)
+        match = replaceCss(id_map, match)
+        result_css = result_css + match
+    
+    from minimize import minimize
+    result_css = minimize(result_css)
+    html = html.replace(matches[0], result_css)
+    file = open(single_file_opt_path, "w")
+    file.write(html)
+    file.close()
+    print "all done"
+    sys.exit()
+
 
 file_path = css_dir + "/" + css_file
 master_file = open(file_path, "w");
@@ -255,7 +314,7 @@ for file in files:
     new_content = optimizeHtml(file)
     new_lines = []
     for line in new_content.split("\n"):
-        if "text/css" not in line or rewrite_css is False:
+        if "link href" not in line or "text/css" not in line or rewrite_css is False:
             new_lines.append(line)
             continue
 
