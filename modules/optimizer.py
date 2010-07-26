@@ -102,6 +102,11 @@ class Optimizer(object):
 
         """
         contents = Util.fileGetContents(path)
+        if self.config.single_file_mode is True:
+            blocks = self.getCssBlocks(contents)
+            contents = ""
+            for block in blocks:
+                contents = contents + block
 
         ids_found = re.findall(r'(#\w+)(;)?', contents)
         classes_found = re.findall(r'(?!\.[0-9])\.\w+', contents)
