@@ -105,7 +105,6 @@ class Optimizer(object):
 
         ids_found = re.findall(r'(#\w+)(;)?', contents)
         classes_found = re.findall(r'(?!\.[0-9])\.\w+', contents)
-
         self.addIds(ids_found)
         self.addClasses(classes_found)
 
@@ -189,6 +188,26 @@ class Optimizer(object):
 
         return html
 
+    def replaceClassBlock(self, class_block, key, value):
+        """replaces a class string with the new class name
+        
+        Arguments:
+        class_block -- string from what would be found within class="{class_block}"
+        key -- current class 
+        value -- new class
+        
+        Returns:
+        string
+        
+        """
+        classes = class_block.split(" ")
+        i = 0
+        for class_name in classes:
+            if class_name == key:
+                classes[i] = value
+            i = i + 1
+        return " ".join(classes)
+
     def replaceHtmlClasses(self, html):
         """replaces any instances of classes in html markup
 
@@ -202,10 +221,10 @@ class Optimizer(object):
         for key, value in self.class_map.items():
             key = key[1:]
             value = value[1:]
-            class_blocks = re.findall(r'class="(.*)"', html)
+            class_blocks = re.findall(r'class\=((\'|\")(.*?)(\'|\"))', html)
             for class_block in class_blocks:
-                new_block = class_block.replace(key, value)
-                html = html.replace("class=\"" + class_block + "\"", "class=\"" + new_block + "\"")
+                new_block = self.replaceClassBlock(class_block[2], key, value)
+                html = html.replace("class=" + class_block[0], "class=" + class_block[1] + new_block + class_block[3])
 
         return html
 
@@ -358,7 +377,7 @@ class Optimizer(object):
         for key, value in dictionary.items():
             blocks = re.findall(r'\((\'|\")(.*)(\'|\")\)', js)
             for block in blocks:
-                new_block = block[1].replace(key, value)
+                new_block = self.replaceClassBlock(block[1], key, value)
                 js = js.replace("(" + block[0] + block[1] + block[2] + ")", "(" + block[0] + new_block + block[2] + ")")
 
         return js
