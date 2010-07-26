@@ -539,10 +539,6 @@ class Config(object):
             except IndexError:
                 Optimizer.showUsage()
 
-        # this is a hack and won't work in all situations
-        if self.single_file_mode is False and self.view_dir.count('/') == self.css_dir.count('/'):
-            self.relative_path = "../"
-
         # check for optional parameters
         for key, arg in enumerate(sys.argv):
             next = key + 1
