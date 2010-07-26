@@ -30,6 +30,19 @@ class Util:
 
         """
         return os.path.isfile(path)
+        
+    @staticmethod
+    def isDir(path):
+        """determines if a path is a directory
+
+        Arguments:
+        path -- path on disk
+
+        Returns:
+        bool
+
+        """
+        return os.path.isdir(path)
 
     @staticmethod
     def dump(obj):
@@ -71,7 +84,8 @@ class Util:
         """
         bits = path.split("/")
         last_bit = bits.pop()
-        return "/".join(bits).rstrip(last_bit)
+        return "/".join(bits)
+        # return "/".join(bits).rstrip(last_bit)
 
     @staticmethod
     def unlink(path):
