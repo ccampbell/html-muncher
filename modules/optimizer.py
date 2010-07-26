@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math, sys, os, re, glob, shutil
+import sys, re, glob, os
+from util import Util
+from minimizer import Minimizer
+from varfactory import VarFactory
 
 class Optimizer(object):
     ids = []
@@ -238,6 +241,25 @@ class Optimizer(object):
 
         """
         return re.compile(r'\<style type=\"text\/css\"\>(.*?)\<\/style\>', re.DOTALL).findall(html)
+
+    def optimizeCss(self, paths):
+        """takes a bunch of css files and combines them into one
+        
+        Arguments:
+        paths -- list of css file paths
+        
+        Returns:
+        string
+        
+        """
+        combined_css = ""
+        for path in paths:
+            print "adding " + path + " to " + self.config.getCssFile()
+            css = Util.fileGetContents(path)
+            css = self.replaceCss(css)
+            combined_css = combined_css + "/*\n * " + path + "\n */\n" + css + "\n\n"
+
+        return combined_css
 
     def replaceCss(self, css):
         """single call to handle replacing ids and classes
@@ -532,250 +554,3 @@ class Config(object):
                 self.css_file = sys.argv[next]
             elif arg == "--view-ext":
                 self.view_extension = sys.argv[next]
-
-
-class Util:
-    """collection of various utility functions"""
-    @staticmethod
-    def fileExists(path):
-        """determines if a file exists
-
-        Arguments:
-        path -- path to file on disk
-
-        Returns:
-        bool
-
-        """
-        return os.path.isfile(path)
-
-    @staticmethod
-    def dump(obj):
-        """displays an object as a string for debugging
-
-        Arguments:
-        obj -- object
-
-        Returns:
-        string
-
-        """
-        for attr in dir(obj):
-            print "obj.%s = %s" % (attr, getattr(obj, attr))
-
-    @staticmethod
-    def getExtension(path):
-        """gets the extension from a file
-
-        Arguments:
-        path -- string of the file name
-
-        Returns:
-        string
-
-        """
-        return path.split(".").pop()
-
-    @staticmethod
-    def getBasePath(path):
-        """gets the base directory one level up from the current path
-
-        Arguments:
-        path -- path to file or directory
-
-        Returns:
-        string
-
-        """
-        bits = path.split("/")
-        last_bit = bits.pop()
-        return "/".join(bits).rstrip(last_bit)
-
-    @staticmethod
-    def unlink(path):
-        """deletes a file on disk
-
-        Arguments:
-        path -- path to file on disk
-
-        Returns:
-        void
-
-        """
-        if Util.fileExists(path):
-            os.unlink(path)
-
-    @staticmethod
-    def unlinkDir(path):
-        """removes an entire directory on disk
-
-        Arguments:
-        path -- path to directory to remove
-
-        Returns:
-        void
-
-        """
-        try:
-            shutil.rmtree(path)
-        except:
-            pass
-
-    @staticmethod
-    def fileGetContents(path):
-        """gets the contents of a file
-
-        Arguments:
-        path -- path to file on disk
-
-        Returns:
-        string
-
-        """
-        if not Util.fileExists(path):
-            print "file does not exist at path " + path
-            print "skipping"
-        file = open(path, "r")
-        contents = file.read()
-        file.close()
-        return contents
-
-    @staticmethod
-    def filePutContents(path, contents):
-        """puts contents into a file
-
-        Arguments:
-        path -- path to file to write to
-        contents -- contents to put into file
-
-        Returns:
-        void
-
-        """
-        file = open(path, "w")
-        file.write(contents)
-        file.close()
-
-
-class VarFactory:
-    """class to keep multiple counters and turn numeric counters into alphabetical ones"""
-    types = {}
-    letters = map(chr, range(97, 123))
-
-    @staticmethod
-    def getNext(type):
-        """gets the next letter name based on counter name
-
-        Arguments:
-        type -- name of counter we want the next value for
-
-        Returns:
-        string
-
-        """
-        i = VarFactory.getVersion(type)
-        return VarFactory.getSmallName(i)
-
-    @staticmethod
-    def getVersion(type):
-        """gets the next number in the counter for this type
-
-        Arguments:
-        type -- name of counter we are incrementing
-
-        Resturns:
-        int
-
-        """
-        if not type in VarFactory.types:
-            VarFactory.types[type] = 0
-            return 0
-
-        VarFactory.types[type] += 1
-
-        return VarFactory.types[type]
-
-    @staticmethod
-    def getSmallName(index):
-        """gets a letter index based on the numeric index
-
-        Arguments:
-        index -- the number you are looking for
-
-        Returns:
-        string
-
-        """
-        # total number of combinations for this index size
-        combinations = 0
-        letters = 0
-        while (combinations + (((letters - 1) * 26) - 1) < index):
-            letters += 1
-            combinations = int(math.pow(len(VarFactory.letters), letters))
-
-        if (index > 701):
-            raise Exception("until my math skillz get better we can only support 702 possibilities!")
-
-        index = int(index)
-
-        string = ''
-        while index >= 0:
-            if index < len(VarFactory.letters):
-                string = string + VarFactory.letters[index]
-                break
-
-            index_for_this_letter = int(math.floor(index / len(VarFactory.letters))) - 1
-            index = index % len(VarFactory.letters)
-            string = string + VarFactory.letters[index_for_this_letter]
-
-        return string
-
-# @see http://stackoverflow.com/questions/222581/python-script-for-minifying-css
-class Minimizer(object):
-    @staticmethod
-    def minimize(css):
-        """minimizes a css stylesheet
-
-        Arguments:
-        css -- string of the stylesheet
-
-        Returns:
-        string
-
-        """
-        # remove comments - this will break a lot of hacks :-P
-        css = re.sub( r'\s*/\*\s*\*/', "$$HACK1$$", css ) # preserve IE<6 comment hack
-        css = re.sub( r'/\*[\s\S]*?\*/', "", css )
-        css = css.replace( "$$HACK1$$", '/**/' ) # preserve IE<6 comment hack
-
-        # url() doesn't need quotes
-        css = re.sub( r'url\((["\'])([^)]*)\1\)', r'url(\2)', css )
-
-        # spaces may be safely collapsed as generated content will collapse them anyway
-        css = re.sub( r'\s+', ' ', css )
-
-        # shorten collapsable colors: #aabbcc to #abc
-        css = re.sub( r'#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3(\s|;)', r'#\1\2\3\4', css )
-
-        # fragment values can loose zeros
-        css = re.sub( r':\s*0(\.\d+([cm]m|e[mx]|in|p[ctx]))\s*;', r':\1;', css )
-
-        new_css = ""
-        for rule in re.findall( r'([^{]+){([^}]*)}', css ):
-
-            # we don't need spaces around operators
-            selectors = [re.sub( r'(?<=[\[\(>+=])\s+|\s+(?=[=~^$*|>+\]\)])', r'', selector.strip() ) for selector in rule[0].split( ',' )]
-
-            # order is important, but we still want to discard repetitions
-            properties = {}
-            porder = []
-            for prop in re.findall( '(.*?):(.*?)(;|$)', rule[1] ):
-                key = prop[0].strip().lower()
-                if key not in porder: porder.append( key )
-                properties[ key ] = prop[1].strip()
-
-            # output rule if it contains any declarations
-            if properties:
-                new_css = new_css + "%s{%s}" % ( ','.join( selectors ), ''.join(['%s:%s;' % (key, properties[key]) for key in porder])[:-1] )
-
-        return new_css
