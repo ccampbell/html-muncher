@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from optimizer import VarFactory, Config, Optimizer, OptimizerSingleFile, Util
+from modules.optimizer import Config, Optimizer, OptimizerSingleFile
 
 config = Config()
 config.processArgs()
