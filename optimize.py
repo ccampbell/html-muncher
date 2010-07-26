@@ -14,17 +14,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 from modules.optimizer import Config, Optimizer, OptimizerSingleFile
 
 config = Config()
 config.processArgs()
 
-if config.single_file_mode is True:
+multiple_runs = False
+if config.multiple_runs is True:
+    multiple_runs = True
+elif config.single_file_mode is True:
     optimizer = OptimizerSingleFile(config)
 else:
     optimizer = Optimizer(config)
 
+if multiple_runs is True:
+    for file in config.getViewFiles():
+        config.single_file_path = file
+        optimizer = OptimizerSingleFile(config)
+        optimizer.setupFiles()
+        optimizer.run()
+    print "all done"
+    sys.exit(2)
+
 optimizer.setupFiles()
 optimizer.run()
-
 print "all done"
