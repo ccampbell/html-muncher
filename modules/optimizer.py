@@ -14,17 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys, re, glob, os
+import sys, re, glob, os, getopt
 from util import Util
 from minimizer import Minimizer
 from varfactory import VarFactory
 
 class Optimizer(object):
-    ids = []
-    classes = []
-    id_map = {}
-    class_map = {}
-
     def __init__(self, config):
         """constructor
 
@@ -32,16 +27,23 @@ class Optimizer(object):
         void
 
         """
+        self.ids = []
+        self.classes = []
+        self.id_map = {}
+        self.class_map = {}
         self.config = config
 
     @staticmethod
     def showUsage():
         """shows usage information for this script"""
         print "USAGE:"
-        print "./optimize.py path/to/css path/to/views"
+        print "./optimize.py path/to/single/file.html"
         print "OR"
-        print "./optimize.py path/to/single/file.html\n"
+        print "./optimize.py --css path/to/css --views path/to/views"
+        print "OR"
+        print "./optimize.py --css file1.css,file2.css,file3.css --views file1.html,file3.html --js main.js\n"
         print "OPTIONAL PARAMS:"
+        print "--js {path/to/js}            js files to rewrite"
         print "--css-file {file_name}       file to use for optimized css (defaults to optimized.css)"
         print "--view-ext {extension}       sets the extension to look for the view directory (defaults to html)"
         print "--rewrite-css                if this arg is present then header css includes are rewritten in the new views"
@@ -56,7 +58,7 @@ class Optimizer(object):
 
         """
         Util.unlink(self.config.getCssFile())
-        Util.unlink(self.config.getCssMinFile())
+        Util.unlink(self.config.getCssMinFile())            
         Util.unlinkDir(self.config.view_dir + "_optimized")
 
     def addIds(self, ids):
@@ -414,6 +416,7 @@ class Optimizer(object):
         paths = self.config.getViewFiles()
         os.mkdir(self.config.view_dir + "_optimized")
         for path in paths:
+            print "optimizing " + path
             html = self.optimizeHtml(path, self.config.rewrite_css)
             Util.filePutContents(self.config.view_dir + "_optimized/" + path.split("/").pop(), html)
 
@@ -454,12 +457,17 @@ class Config(object):
 
         """
         self.single_file_mode = False
-        self.css_file = "optimized.css"
+        self.multiple_runs = False
+        self.css_is_dir = True
+        self.css_files = []
+        self.views_is_dir = True
+        self.view_files = []
+        self.new_css_file = "optimized.css"
         self.view_extension = "html"
         self.rewrite_css = False
         self.ids_to_replace = []
         self.classes_to_replace = []
-        relative_path = ""
+        self.single_file_path = ""
 
     def getArgCount(self):
         """gets the count of how many arguments are present
@@ -477,7 +485,7 @@ class Config(object):
         string
 
         """
-        return self.css_dir + "/" + self.css_file
+        return self.css_dir + "/" + self.new_css_file
 
     def getCssMinFile(self):
         """gets the path to write the minimized css file to
@@ -498,8 +506,11 @@ class Config(object):
         files = []
         if self.single_file_mode is True:
             files.append(self.single_file_path)
-            return files
+            return files        
 
+        if self.css_is_dir is False:
+            return self.css_files
+        
         return glob.glob(self.css_dir + "/*.css")
 
     def getViewFiles(self):
@@ -510,11 +521,34 @@ class Config(object):
 
         """
         files = []
+        if self.views_is_dir is False:
+            return self.view_files
+
         if self.single_file_mode is True:
             files.append(self.single_file_path)
             return files
 
         return glob.glob(self.view_dir + "/*." + self.view_extension)
+
+    def setCssFiles(self, value):
+        value = value.rstrip("/")
+        if Util.isDir(value):
+            self.css_dir = value
+            return
+        
+        self.css_is_dir = False
+        self.css_files = value.split(",")
+        self.css_dir = Util.getBasePath(self.css_files[0])
+    
+    def setViewFiles(self, value):
+        value = value.rstrip("/")
+        if Util.isDir(value):
+            self.view_dir = value
+            return
+
+        self.views_is_dir = False
+        self.view_files = value.split(",")
+        self.view_dir = Util.getBasePath(self.view_files[0])
 
     def processArgs(self):
         """processes arguments passed in via command line and sets config settings accordingly
@@ -530,23 +564,42 @@ class Config(object):
             if not Util.fileExists(self.single_file_path):
                 print "file does not exist at path: " + self.single_file_path
                 sys.exit(2)
+            return
 
-        # required arguments
-        if self.single_file_mode is False:
-            try:
-                self.css_dir = sys.argv[1].rstrip("/")
-                self.view_dir = sys.argv[2].rstrip("/")
-            except IndexError:
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "c:v:jhrfe", ["css=", "views=", "js=", "help", "rewrite-css", "css-file=", "view-ext="])
+        except:
+            Optimizer.showUsage()
+            sys.exit(2)
+           
+        css_set = False
+        views_set = False
+         
+        for key, value in opts:
+            if key in ("-h", "--help"):
                 Optimizer.showUsage()
-
-        # check for optional parameters
-        for key, arg in enumerate(sys.argv):
-            next = key + 1
-            if arg == "--help":
-                Optimizer.showUsage()
-            elif arg == "--rewrite-css":
+                sys.exit(2)
+            elif key in ("-c", "--css"):
+                css_set = True
+                self.setCssFiles(value)
+            elif key in ("-v", "--views"):
+                views_set = True
+                self.setViewFiles(value)
+            # elif key in ("-j", "--js"):
+                # self.setJsFiles(value)
+            elif key in ("-r", "--rewrite-css"):
                 self.rewrite_css = True
-            elif arg == "--css-file":
-                self.css_file = sys.argv[next]
-            elif arg == "--view-ext":
-                self.view_extension = sys.argv[next]
+            elif key in ("-f", "--css-file"):
+                self.new_css_file = value
+            elif key in ("-e", "--view-ext"):
+                self.view_extension = value
+        
+        # you have to at least have a view
+        if views_set is False:
+            Optimizer.showUsage()
+            sys.exit(2)
+        
+        # if you have a views but no css we process them in single file mode
+        if css_set is False:
+            self.multiple_runs = True
+            self.single_file_mode = True
