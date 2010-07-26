@@ -33,10 +33,12 @@ it will be rewritten as
 =============
 
 to try this out for yourself and update a bunch of stylesheets and views:
-
 cd css-optimizer
-./optimize.py demo/css demo/views --rewrite-css
+./optimize.py --css demo/css --views demo/views --rewrite-css
 
 to update a single file with inline styles/javascript:
 cd css-optimizer
 ./optimize.py demo/single-file/view-with-inline-styles.html
+
+you can also select specific files:
+./optimize.py --css file1.css,file2.css --views view1.html,view2.html
