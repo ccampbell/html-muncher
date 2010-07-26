@@ -3,6 +3,7 @@
 =============
 
 css-optimizer is a python script that converts css class names and ids to simpler names for making the filesize smaller and obfuscating your css code
+it also converts corresponding html and javascript class references
 
 if your stylesheet starts out looking like this:
 
@@ -26,7 +27,6 @@ it will be rewritten as
 
 .a #a{font-size:1.5em;color:#F737FF;}.a #b{letter-spacing:0;}.b{border:2px solid #aaa;-webkit-border-radius:5px;background:#eee;padding:5px;}
 
-any html views referencing the classes and ids are updated and placed into a new directory
 
 =============
    USAGE
@@ -37,6 +37,6 @@ to try this out for yourself and update a bunch of stylesheets and views:
 cd css-optimizer
 ./optimize.py demo/css demo/views --rewrite-css
 
-to update a single file with inline styles:
+to update a single file with inline styles/javascript:
 cd css-optimizer
 ./optimize.py demo/single-file/view-with-inline-styles.html
