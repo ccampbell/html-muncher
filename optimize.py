@@ -26,3 +26,5 @@ else:
 
 optimizer.setupFiles()
 optimizer.run()
+
+print "all done"
