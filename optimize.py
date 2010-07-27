@@ -34,9 +34,9 @@ if multiple_runs is True:
         optimizer = OptimizerSingleFile(config)
         optimizer.setupFiles()
         optimizer.run()
-    print "all done"
+    print "done"
     sys.exit(2)
 
 optimizer.setupFiles()
 optimizer.run()
-print "all done"
+print "done"

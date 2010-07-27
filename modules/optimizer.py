@@ -39,7 +39,7 @@ class Optimizer(object):
         print "\n======================"
         print "CSS-Optimizer thingy"
         print "======================"
-        
+
         print "\nUSAGE:"
         # print "single file:"
         print "./optimize.py path/to/single/file.html"
@@ -51,7 +51,7 @@ class Optimizer(object):
         print "--views {path/to/views}      html files to rewrite (directory or comma separated files)"
         print "                             NOTE: if you pass views alone they are treated as if they have inline css/js"
         print "\nOPTIONAL ARGUMENTS:"
-        print "--css {path/to/css}          css files to rewrite (directory or comma separated files)"         
+        print "--css {path/to/css}          css files to rewrite (directory or comma separated files)"
         print "--js {path/to/js}            js files to rewrite (directory or comma separted files)"
         print "--css-file {file_name}       file to use for optimized css (defaults to optimized.css)"
         print "--view-ext {extension}       sets the extension to look for in the view directory (defaults to html)"
@@ -271,7 +271,8 @@ class Optimizer(object):
 
         return html
 
-    def getCssBlocks(self, html):
+    @staticmethod
+    def getCssBlocks(html):
         """searches a file and returns all css blocks <style type="text/css"></style>
 
         Arguments:
@@ -327,6 +328,7 @@ class Optimizer(object):
         string
 
         """
+        # this really should be done better
         for key, value in dictionary.items():
             css = css.replace(key + "{", value + "{")
             css = css.replace(key + " {", value + " {")
@@ -336,6 +338,7 @@ class Optimizer(object):
             css = css.replace(key + " .", value + " .")
             css = css.replace(key + ",", value + ",")
             css = css.replace(key + " ", value + " ")
+            css = css.replace(key + ":", value + ":")
 
         return css
 
@@ -506,8 +509,14 @@ class OptimizerSingleFile(Optimizer):
         """
         self.processStyles()
         self.processMaps()
+        print "optimizing " + self.config.single_file_path + " to " + self.config.single_file_opt_path
         html = self.optimizeHtml(self.config.single_file_path, False)
         Util.filePutContents(self.config.single_file_opt_path, html);
+        
+        if self.config.replace_chains is True:
+            from reducer import ChainReducerSingleFile
+            chain_reducer = ChainReducerSingleFile(self.config)
+            chain_reducer.run()
 
 
 class Config(object):
@@ -532,6 +541,7 @@ class Config(object):
         self.new_css_file = "optimized.css"
         self.view_extension = "html"
         self.rewrite_css = False
+        self.replace_chains = False
         self.process_js = False
         self.ids_to_replace = []
         self.classes_to_replace = []
@@ -685,7 +695,7 @@ class Config(object):
             return
 
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "c:v:jhrfe", ["css=", "views=", "js=", "help", "rewrite-css", "css-file=", "view-ext="])
+            opts, args = getopt.getopt(sys.argv[1:], "c:v:jhprfe", ["css=", "views=", "js=", "help", "chain-chomp", "rewrite-css", "css-file=", "view-ext="])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -709,6 +719,8 @@ class Config(object):
                 self.rewrite_css = True
             elif key in ("-f", "--css-file"):
                 self.new_css_file = value
+            elif key in ("-p", "--chain-chomp"):
+                self.replace_chains = True
             elif key in ("-e", "--view-ext"):
                 self.view_extension = value
 
