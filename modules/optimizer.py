@@ -36,18 +36,27 @@ class Optimizer(object):
     @staticmethod
     def showUsage():
         """shows usage information for this script"""
-        print "USAGE:"
+        print "\n======================"
+        print "CSS-Optimizer thingy"
+        print "======================"
+        
+        print "\nUSAGE:"
+        # print "single file:"
         print "./optimize.py path/to/single/file.html"
-        print "OR"
+        # print "entire directories:"
         print "./optimize.py --css path/to/css --views path/to/views"
-        print "OR"
-        print "./optimize.py --css file1.css,file2.css,file3.css --views file1.html,file3.html --js main.js\n"
-        print "OPTIONAL PARAMS:"
-        print "--js {path/to/js}            js files to rewrite"
+        # print "list of files:"
+        print "./optimize.py --css file1.css,file2.css,file3.css --views file1.html,file3.html --js main.js"
+        print "\nREQUIRED ARGUMENTS:"
+        print "--views {path/to/views}      html files to rewrite (directory or comma separated files)"
+        print "                             NOTE: if you pass views alone they are treated as if they have inline css/js"
+        print "\nOPTIONAL ARGUMENTS:"
+        print "--css {path/to/css}          css files to rewrite (directory or comma separated files)"         
+        print "--js {path/to/js}            js files to rewrite (directory or comma separted files)"
         print "--css-file {file_name}       file to use for optimized css (defaults to optimized.css)"
-        print "--view-ext {extension}       sets the extension to look for the view directory (defaults to html)"
-        print "--rewrite-css                if this arg is present then header css includes are rewritten in the new views"
-        print "--help                       shows this menu"
+        print "--view-ext {extension}       sets the extension to look for in the view directory (defaults to html)"
+        print "--rewrite-css                if this arg is present then <link href css tags are rewritten in the views"
+        print "--help                       shows this menu\n"
         sys.exit(2)
 
     def setupFiles(self):
