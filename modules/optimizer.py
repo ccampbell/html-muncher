@@ -206,11 +206,16 @@ class Optimizer(object):
         string
 
         """
+        key_length = len(key)
         classes = class_block.split(" ")
         i = 0
         for class_name in classes:
             if class_name == key:
                 classes[i] = value
+
+            # allows support for things like a.class_name as one of the js selectors
+            elif key[0] in (".", "#") and class_name[-key_length:] == key:
+                classes[i] = class_name.replace(key, value)
             i = i + 1
         return " ".join(classes)
 
