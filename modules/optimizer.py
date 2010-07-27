@@ -58,8 +58,9 @@ class Optimizer(object):
 
         """
         Util.unlink(self.config.getCssFile())
-        Util.unlink(self.config.getCssMinFile())            
+        Util.unlink(self.config.getCssMinFile())
         Util.unlinkDir(self.config.view_dir + "_optimized")
+        Util.unlinkDir(self.config.js_dir + "_optimized")
 
     def addIds(self, ids):
         """adds a list of ids to the master id list to replace
@@ -195,15 +196,15 @@ class Optimizer(object):
 
     def replaceClassBlock(self, class_block, key, value):
         """replaces a class string with the new class name
-        
+
         Arguments:
         class_block -- string from what would be found within class="{class_block}"
-        key -- current class 
+        key -- current class
         value -- new class
-        
+
         Returns:
         string
-        
+
         """
         classes = class_block.split(" ")
         i = 0
@@ -249,7 +250,7 @@ class Optimizer(object):
             match = self.replaceCss(match)
             result_css = result_css + match
 
-        result_css = Minimizer.minimize(result_css)
+        # result_css = Minimizer.minimize(result_css)
 
         if len(matches):
             return html.replace(matches[0], result_css)
@@ -270,13 +271,13 @@ class Optimizer(object):
 
     def optimizeCss(self, paths):
         """takes a bunch of css files and combines them into one
-        
+
         Arguments:
         paths -- list of css file paths
-        
+
         Returns:
         string
-        
+
         """
         combined_css = ""
         for path in paths:
@@ -353,6 +354,19 @@ class Optimizer(object):
 
         """
         return re.compile(r'\<script type=\"text\/javascript\"\>(.*?)\<\/script\>', re.DOTALL).findall(html)
+
+    def optimizeJavascript(self, path):
+        """optimizes javascript for a specific file
+
+        Arguments:
+        path -- path to js file on disk that we are optimizing
+
+        Returns:
+        string -- contents to replace file with
+
+        """
+        js = Util.fileGetContents(path)
+        return self.replaceJavascript(js)
 
     def replaceJavascript(self, js):
         """single call to handle replacing ids and classes
@@ -432,9 +446,9 @@ class Optimizer(object):
 
         # first optimize all the css files
         css = self.optimizeCss(self.config.getCssFiles())
-        minimized_css = Minimizer.minimize(css)
+        # minimized_css = Minimizer.minimize(css)
         Util.filePutContents(self.config.getCssFile(), css)
-        Util.filePutContents(self.config.getCssMinFile(), minimized_css)
+        # Util.filePutContents(self.config.getCssMinFile(), minimized_css)
 
         # next optimize the views
         paths = self.config.getViewFiles()
@@ -443,6 +457,17 @@ class Optimizer(object):
             print "optimizing " + path
             html = self.optimizeHtml(path, self.config.rewrite_css)
             Util.filePutContents(self.config.view_dir + "_optimized/" + path.split("/").pop(), html)
+
+        # finally if there is any js optimize that
+        if self.config.process_js is False:
+            return
+
+        paths = self.config.getJsFiles()
+        os.mkdir(self.config.js_dir + "_optimized")
+        for path in paths:
+            print "optimizing " + path
+            js = self.optimizeJavascript(path)
+            Util.filePutContents(self.config.js_dir + "_optimized/" + path.split("/").pop(), js)
 
 
 class OptimizerSingleFile(Optimizer):
@@ -482,13 +507,18 @@ class Config(object):
         """
         self.single_file_mode = False
         self.multiple_runs = False
+
         self.css_is_dir = True
-        self.css_files = []
         self.views_is_dir = True
+        self.js_is_dir = True
+        self.css_files = []
         self.view_files = []
+        self.js_files = []
+
         self.new_css_file = "optimized.css"
         self.view_extension = "html"
         self.rewrite_css = False
+        self.process_js = False
         self.ids_to_replace = []
         self.classes_to_replace = []
         self.single_file_path = ""
@@ -530,12 +560,24 @@ class Config(object):
         files = []
         if self.single_file_mode is True:
             files.append(self.single_file_path)
-            return files        
+            return files
 
         if self.css_is_dir is False:
             return self.css_files
-        
+
         return glob.glob(self.css_dir + "/*.css")
+
+    def getJsFiles(self):
+        """gets all js files to process for this run
+
+        Returns:
+        list
+
+        """
+        if self.js_is_dir is False:
+            return self.js_files
+
+        return glob.glob(self.js_dir + "/*.js")
 
     def getViewFiles(self):
         """gets all view files to process for this request
@@ -555,16 +597,34 @@ class Config(object):
         return glob.glob(self.view_dir + "/*." + self.view_extension)
 
     def setCssFiles(self, value):
+        """sets css files from command line argument
+
+        Arguments:
+        value -- directory or comma separated file list
+
+        Returns:
+        void
+
+        """
         value = value.rstrip("/")
         if Util.isDir(value):
             self.css_dir = value
             return
-        
+
         self.css_is_dir = False
         self.css_files = value.split(",")
         self.css_dir = Util.getBasePath(self.css_files[0])
-    
+
     def setViewFiles(self, value):
+        """sets view files from command line argument
+
+        Arguments:
+        value -- directory or comma separated file list
+
+        Returns:
+        void
+
+        """
         value = value.rstrip("/")
         if Util.isDir(value):
             self.view_dir = value
@@ -573,6 +633,26 @@ class Config(object):
         self.views_is_dir = False
         self.view_files = value.split(",")
         self.view_dir = Util.getBasePath(self.view_files[0])
+
+    def setJsFiles(self, value):
+        """sets js files from command line argument
+
+        Arguments:
+        value -- directory or comma separated file list
+
+        Returns:
+        void
+
+        """
+        self.process_js = True
+        value = value.rstrip("/")
+        if Util.isDir(value):
+            self.js_dir = value
+            return
+
+        self.js_is_dir = False
+        self.js_files = value.split(",")
+        self.js_dir = Util.getBasePath(self.js_files[0])
 
     def processArgs(self):
         """processes arguments passed in via command line and sets config settings accordingly
@@ -595,10 +675,10 @@ class Config(object):
         except:
             Optimizer.showUsage()
             sys.exit(2)
-           
+
         css_set = False
         views_set = False
-         
+
         for key, value in opts:
             if key in ("-h", "--help"):
                 Optimizer.showUsage()
@@ -609,20 +689,20 @@ class Config(object):
             elif key in ("-v", "--views"):
                 views_set = True
                 self.setViewFiles(value)
-            # elif key in ("-j", "--js"):
-                # self.setJsFiles(value)
+            elif key in ("-j", "--js"):
+                self.setJsFiles(value)
             elif key in ("-r", "--rewrite-css"):
                 self.rewrite_css = True
             elif key in ("-f", "--css-file"):
                 self.new_css_file = value
             elif key in ("-e", "--view-ext"):
                 self.view_extension = value
-        
+
         # you have to at least have a view
         if views_set is False:
             Optimizer.showUsage()
             sys.exit(2)
-        
+
         # if you have a views but no css we process them in single file mode
         if css_set is False:
             self.multiple_runs = True
