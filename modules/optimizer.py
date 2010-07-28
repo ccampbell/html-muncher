@@ -71,6 +71,19 @@ class Optimizer(object):
         Util.unlinkDir(self.config.view_dir + "_optimized")
         Util.unlinkDir(self.config.js_dir + "_optimized")
 
+    def addId(self, id):
+        """adds a single id to the master list of ids
+        
+        Arguments:
+        id -- single id to add
+        
+        Returns:
+        void
+        
+        """
+        if id not in self.ids:
+            self.ids.append(id)
+
     def addIds(self, ids):
         """adds a list of ids to the master id list to replace
 
@@ -84,8 +97,20 @@ class Optimizer(object):
         for id in ids:
             if id[1] is ';':
                 continue
-            if id[0] not in self.ids:
-                self.ids.append(id[0])
+            self.addId(id[0])
+
+    def addClass(self, class_name):
+        """adds a single class to the master list of classes
+        
+        Arguments:
+        class_name -- single class to add
+        
+        Returns:
+        void
+        
+        """
+        if class_name not in self.classes:
+            self.classes.append(class_name)
 
     def addClasses(self, classes):
         """adds a list of classes to the master class list to replace
@@ -98,10 +123,9 @@ class Optimizer(object):
 
         """
         for class_name in classes:
-            if class_name not in self.classes:
-                self.classes.append(class_name)
+            self.addClass(class_name)
 
-    def processFile(self, path):
+    def processCssFile(self, path):
         """processes a single css file to find all classes and ids to replace
 
         Arguments:
@@ -123,8 +147,41 @@ class Optimizer(object):
         self.addIds(ids_found)
         self.addClasses(classes_found)
 
+    def processJsFile(self, path):
+        """processes a single js file to find all classes and ids to replace
+
+        Arguments:
+        path -- path to css file to process
+
+        Returns:
+        Void
+
+        """
+        contents = Util.fileGetContents(path)
+        if self.config.single_file_mode is True:
+            blocks = self.getJsBlocks(contents)
+            contents = ""
+            for block in blocks:
+                contents = contents + block
+
+        selectors = self.getJsSelectors(contents)
+        for selector in selectors:
+            if selector[0] == "getElementById":
+                self.addId("#" + selector[3])
+                continue
+            
+            bits = selector[3].split(" ")
+            for bit in bits:
+                if not bit:
+                    continue
+
+                if bit[0] == ".":
+                    self.addClass(bit)
+                elif bit[0] == "#":
+                    self.addId(bit)
+
     def processStyles(self):
-        """gets all files from config and processes them to see what to replace
+        """gets all css files from config and processes them to see what to replace
 
         Returns:
         void
@@ -132,7 +189,18 @@ class Optimizer(object):
         """
         files = self.config.getCssFiles()
         for file in files:
-            self.processFile(file)
+            self.processCssFile(file)
+    
+    def processJs(self):
+        """gets all js files from config and processes them to see what to replace
+
+        Returns:
+        void
+
+        """
+        files = self.config.getJsFiles()
+        for file in files:
+            self.processJsFile(file)
 
     def processMaps(self):
         """loops through classes and ids to process to determine shorter names to use for them
@@ -226,6 +294,7 @@ class Optimizer(object):
             elif key[0] in (".", "#") and class_name[-key_length:] == key:
                 classes[i] = class_name.replace(key, value)
             i = i + 1
+
         return " ".join(classes)
 
     def replaceHtmlClasses(self, html):
@@ -402,7 +471,16 @@ class Optimizer(object):
 
     @staticmethod
     def getJsSelectors(js):
-        return re.findall(r'\((\'|\")(.*?)(\'|\")\)', js)
+        """finds all js selectors within a js block
+        
+        Arguments:
+        js -- contents of js file to search
+        
+        Returns:
+        list
+        
+        """
+        return re.findall(r'(getElementById)?(\((\'|\")(.*?)(\'|\")\))', js)
 
     def replaceJsFromDictionary(self, dictionary, js):
         """replaces any instances of classes and ids based on a dictionary
@@ -418,8 +496,13 @@ class Optimizer(object):
         for key, value in dictionary.items():
             blocks = self.getJsSelectors(js)
             for block in blocks:
-                new_block = self.replaceClassBlock(block[1], key, value)
-                js = js.replace("(" + block[0] + block[1] + block[2] + ")", "(" + block[0] + new_block + block[2] + ")")
+                if block[0] == 'getElementById' and key[0] == "#" and key[1:] == block[3]:
+                    js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
+                    continue
+                new_block = self.replaceClassBlock(block[3], key, value)
+                # print "replace " + block[1]
+                # print "with (" + block[2] + new_block + block[4] + ")"
+                js = js.replace(block[1], "(" + block[2] + new_block + block[4] + ")")
 
         return js
 
@@ -464,6 +547,7 @@ class Optimizer(object):
 
         """
         self.processStyles()
+        self.processJs()
         self.processMaps()
 
         # first optimize all the css files
@@ -513,6 +597,7 @@ class OptimizerSingleFile(Optimizer):
 
         """
         self.processStyles()
+        self.processJs()
         self.processMaps()
         print "optimizing " + self.config.single_file_path + " to " + self.config.single_file_opt_path
         html = self.optimizeHtml(self.config.single_file_path, False)
@@ -603,6 +688,11 @@ class Config(object):
         list
 
         """
+        files = []
+        if self.single_file_mode is True:
+            files.append(self.single_file_path)
+            return files
+
         if self.js_is_dir is False:
             return self.js_files
 
@@ -626,6 +716,12 @@ class Config(object):
         return glob.glob(self.view_dir + "/*." + self.view_extension)
 
     def getOptimizedViewFiles(self):
+        """gets optimized filepaths of all view files
+        
+        Returns:
+        list
+        
+        """
         opt_files = []
         for file in self.getViewFiles():
             ext = Util.getExtension(file)            

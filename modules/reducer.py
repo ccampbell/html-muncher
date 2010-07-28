@@ -50,7 +50,7 @@ class ChainReducer(object):
             js = Util.fileGetContents(file)
             selectors = Optimizer.getJsSelectors(js)
             for selector in selectors:
-                js_selectors.append(selector[1])
+                js_selectors.append(selector[3])
         
         return js_selectors
     
