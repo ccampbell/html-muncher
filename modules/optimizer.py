@@ -360,7 +360,8 @@ class Optimizer(object):
 
         return html
 
-    def getJsBlocks(self, html):
+    @staticmethod
+    def getJsBlocks(html):
         """searches a file and returns all javascript blocks: <script type="text/javascript"></script>
 
         Arguments:
@@ -399,6 +400,10 @@ class Optimizer(object):
         js = self.replaceJsFromDictionary(self.class_map, js)
         return js
 
+    @staticmethod
+    def getJsSelectors(js):
+        return re.findall(r'\((\'|\")(.*?)(\'|\")\)', js)
+
     def replaceJsFromDictionary(self, dictionary, js):
         """replaces any instances of classes and ids based on a dictionary
 
@@ -411,7 +416,7 @@ class Optimizer(object):
 
         """
         for key, value in dictionary.items():
-            blocks = re.findall(r'\((\'|\")(.*)(\'|\")\)', js)
+            blocks = self.getJsSelectors(js)
             for block in blocks:
                 new_block = self.replaceClassBlock(block[1], key, value)
                 js = js.replace("(" + block[0] + block[1] + block[2] + ")", "(" + block[0] + new_block + block[2] + ")")
@@ -620,6 +625,13 @@ class Config(object):
 
         return glob.glob(self.view_dir + "/*." + self.view_extension)
 
+    def getOptimizedViewFiles(self):
+        opt_files = []
+        for file in self.getViewFiles():
+            ext = Util.getExtension(file)            
+            opt_files.append(file.replace("." + ext, ".opt." + ext))
+        return opt_files
+        
     def setCssFiles(self, value):
         """sets css files from command line argument
 
