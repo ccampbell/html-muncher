@@ -132,7 +132,7 @@ class Optimizer(object):
         path -- path to css file to process
 
         Returns:
-        Void
+        void
 
         """
         contents = Util.fileGetContents(path)
@@ -154,7 +154,7 @@ class Optimizer(object):
         path -- path to css file to process
 
         Returns:
-        Void
+        void
 
         """
         contents = Util.fileGetContents(path)
@@ -500,8 +500,6 @@ class Optimizer(object):
                     js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
                     continue
                 new_block = self.replaceClassBlock(block[3], key, value)
-                # print "replace " + block[1]
-                # print "with (" + block[2] + new_block + block[4] + ")"
                 js = js.replace(block[1], "(" + block[2] + new_block + block[4] + ")")
 
         return js
