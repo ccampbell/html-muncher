@@ -69,7 +69,9 @@ class Optimizer(object):
         Util.unlink(self.config.getCssFile())
         Util.unlink(self.config.getCssMinFile())
         Util.unlinkDir(self.config.view_dir + "_optimized")
-        Util.unlinkDir(self.config.js_dir + "_optimized")
+        
+        if self.config.js_dir is not None:
+            Util.unlinkDir(self.config.js_dir + "_optimized")
 
     def addId(self, id):
         """adds a single id to the master list of ids
@@ -625,6 +627,7 @@ class Config(object):
         self.css_files = []
         self.view_files = []
         self.js_files = []
+        self.js_dir = None
 
         self.new_css_file = "optimized.css"
         self.view_extension = "html"
@@ -693,6 +696,9 @@ class Config(object):
 
         if self.js_is_dir is False:
             return self.js_files
+
+        if self.js_dir is None:
+            return files
 
         return glob.glob(self.js_dir + "/*.js")
 
