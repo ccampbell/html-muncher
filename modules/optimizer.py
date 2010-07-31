@@ -336,9 +336,9 @@ class Optimizer(object):
             match = self.replaceCss(match)
             result_css = result_css + match
 
-        if self.config.tidy is True:
-            from tidier import Tidier
-            result_css = Tidier.run(result_css)
+            if self.config.tidy is True:
+                from tidier import Tidier
+                result_css = Tidier.run(result_css)
 
         if len(matches):
             return html.replace(matches[0], result_css)
