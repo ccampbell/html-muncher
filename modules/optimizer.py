@@ -68,20 +68,22 @@ class Optimizer(object):
         """
         Util.unlink(self.config.getCssFile())
         Util.unlink(self.config.getCssMinFile())
-        Util.unlinkDir(self.config.view_dir + "_optimized")
         
+        for dir in self.config.getViewDirs():
+            Util.unlinkDir(dir + "_optimized")
+
         if self.config.js_dir is not None:
             Util.unlinkDir(self.config.js_dir + "_optimized")
 
     def addId(self, id):
         """adds a single id to the master list of ids
-        
+
         Arguments:
         id -- single id to add
-        
+
         Returns:
         void
-        
+
         """
         if id not in self.ids:
             self.ids.append(id)
@@ -103,13 +105,13 @@ class Optimizer(object):
 
     def addClass(self, class_name):
         """adds a single class to the master list of classes
-        
+
         Arguments:
         class_name -- single class to add
-        
+
         Returns:
         void
-        
+
         """
         if class_name not in self.classes:
             self.classes.append(class_name)
@@ -171,7 +173,7 @@ class Optimizer(object):
             if selector[0] == "getElementById":
                 self.addId("#" + selector[3])
                 continue
-            
+
             bits = selector[3].split(" ")
             for bit in bits:
                 if not bit:
@@ -192,7 +194,7 @@ class Optimizer(object):
         files = self.config.getCssFiles()
         for file in files:
             self.processCssFile(file)
-    
+
     def processJs(self):
         """gets all js files from config and processes them to see what to replace
 
@@ -474,13 +476,13 @@ class Optimizer(object):
     @staticmethod
     def getJsSelectors(js):
         """finds all js selectors within a js block
-        
+
         Arguments:
         js -- contents of js file to search
-        
+
         Returns:
         list
-        
+
         """
         return re.findall(r'(getElementById)?(\((\'|\")(.*?)(\'|\")\))', js)
 
@@ -557,12 +559,13 @@ class Optimizer(object):
         # Util.filePutContents(self.config.getCssMinFile(), minimized_css)
 
         # next optimize the views
-        paths = self.config.getViewFiles()
-        os.mkdir(self.config.view_dir + "_optimized")
-        for path in paths:
-            print "optimizing " + path
-            html = self.optimizeHtml(path, self.config.rewrite_css)
-            Util.filePutContents(self.config.view_dir + "_optimized/" + path.split("/").pop(), html)
+        for dir in self.config.getViewDirs():
+            paths = self.config.getViewFiles(dir)
+            os.mkdir(dir + "_optimized")
+            for path in paths:
+                print "optimizing " + path
+                html = self.optimizeHtml(path, self.config.rewrite_css)
+                Util.filePutContents(dir + "_optimized/" + path.split("/").pop(), html)
 
         # finally if there is any js optimize that
         if self.config.process_js is False:
@@ -602,7 +605,7 @@ class OptimizerSingleFile(Optimizer):
         print "optimizing " + self.config.single_file_path + " to " + self.config.single_file_opt_path
         html = self.optimizeHtml(self.config.single_file_path, False)
         Util.filePutContents(self.config.single_file_opt_path, html);
-        
+
         if self.config.replace_chains is True:
             from reducer import ChainReducerSingleFile
             chain_reducer = ChainReducerSingleFile(self.config)
@@ -626,6 +629,7 @@ class Config(object):
         self.js_is_dir = True
         self.css_files = []
         self.view_files = []
+        self.view_dirs = []
         self.js_files = []
         self.js_dir = None
 
@@ -702,7 +706,7 @@ class Config(object):
 
         return glob.glob(self.js_dir + "/*.js")
 
-    def getViewFiles(self):
+    def getViewFiles(self, dir):
         """gets all view files to process for this request
 
         Returns:
@@ -717,21 +721,24 @@ class Config(object):
             files.append(self.single_file_path)
             return files
 
-        return glob.glob(self.view_dir + "/*." + self.view_extension)
+        return glob.glob(dir + "/*." + self.view_extension)
+
+    def getViewDirs(self):
+        return self.view_dirs
 
     def getOptimizedViewFiles(self):
         """gets optimized filepaths of all view files
-        
+
         Returns:
         list
-        
+
         """
         opt_files = []
         for file in self.getViewFiles():
-            ext = Util.getExtension(file)            
+            ext = Util.getExtension(file)
             opt_files.append(file.replace("." + ext, ".opt." + ext))
         return opt_files
-        
+
     def setCssFiles(self, value):
         """sets css files from command line argument
 
@@ -761,14 +768,19 @@ class Config(object):
         void
 
         """
-        value = value.rstrip("/")
-        if Util.isDir(value):
-            self.view_dir = value
+        values = value.split(",")
+        
+        # multiple files
+        if not Util.isDir(values[0].rstrip("/")):
+            self.views_is_dir = False
+            self.view_files = values
+            self.view_dirs.append(Util.getBasePath(self.view_files[0]))
             return
 
-        self.views_is_dir = False
-        self.view_files = value.split(",")
-        self.view_dir = Util.getBasePath(self.view_files[0])
+        # multiple directories
+        for value in values:
+            value = value.rstrip("/")
+            self.view_dirs.append(value)
 
     def setJsFiles(self, value):
         """sets js files from command line argument
