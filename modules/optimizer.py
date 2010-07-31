@@ -16,7 +16,6 @@
 
 import sys, re, glob, os, getopt
 from util import Util
-from minimizer import Minimizer
 from varfactory import VarFactory
 
 class Optimizer(object):
@@ -337,7 +336,9 @@ class Optimizer(object):
             match = self.replaceCss(match)
             result_css = result_css + match
 
-        # result_css = Minimizer.minimize(result_css)
+        if self.config.tidy is True:
+            from tidier import Tidier
+            result_css = Tidier.run(result_css)
 
         if len(matches):
             return html.replace(matches[0], result_css)
@@ -554,9 +555,13 @@ class Optimizer(object):
 
         # first optimize all the css files
         css = self.optimizeCss(self.config.getCssFiles())
-        # minimized_css = Minimizer.minimize(css)
         Util.filePutContents(self.config.getCssFile(), css)
-        # Util.filePutContents(self.config.getCssMinFile(), minimized_css)
+
+        # minimize css if the tidy option is set
+        if self.config.tidy is True:
+            from tidier import Tidier
+            css = Tidier.run(css)
+            Util.filePutContents(self.config.getCssMinFile(), css)
 
         # next optimize the views
         for dir in self.config.getViewDirs():
@@ -577,6 +582,7 @@ class Optimizer(object):
             print "optimizing " + path
             js = self.optimizeJavascript(path)
             Util.filePutContents(self.config.js_dir + "_optimized/" + path.split("/").pop(), js)
+
 
 
 class OptimizerSingleFile(Optimizer):
@@ -623,6 +629,7 @@ class Config(object):
         """
         self.single_file_mode = False
         self.multiple_runs = False
+        self.tidy = False
 
         self.css_is_dir = True
         self.views_is_dir = True
@@ -819,7 +826,7 @@ class Config(object):
             return
 
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "c:v:jhprfe", ["css=", "views=", "js=", "help", "chain-chomp", "rewrite-css", "css-file=", "view-ext="])
+            opts, args = getopt.getopt(sys.argv[1:], "c:v:jhprfet", ["css=", "views=", "js=", "help", "chain-chomp", "rewrite-css", "css-file=", "view-ext=", "tidy"])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -847,6 +854,8 @@ class Config(object):
                 self.replace_chains = True
             elif key in ("-e", "--view-ext"):
                 self.view_extension = value
+            elif key in ("-t", "--tidy"):
+                self.tidy = True
 
         # you have to at least have a view
         if views_set is False:

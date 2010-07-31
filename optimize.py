@@ -29,7 +29,7 @@ else:
     optimizer = Optimizer(config)
 
 if multiple_runs is True:
-    for file in config.getViewFiles():
+    for file in config.getViewFiles(None):
         config.single_file_path = file
         optimizer = OptimizerSingleFile(config)
         optimizer.setupFiles()
