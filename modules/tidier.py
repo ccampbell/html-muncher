@@ -1,4 +1,4 @@
-import urllib,httplib,re
+import urllib, httplib, re
 
 class Tidier(object):
     url = "codebeautifier.com:80"

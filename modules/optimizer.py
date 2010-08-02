@@ -67,7 +67,7 @@ class Optimizer(object):
         """
         Util.unlink(self.config.getCssFile())
         Util.unlink(self.config.getCssMinFile())
-        
+
         for dir in self.config.getViewDirs():
             Util.unlinkDir(dir + "_optimized")
 
@@ -84,6 +84,9 @@ class Optimizer(object):
         void
 
         """
+        if id in self.config.ignore:
+            return
+
         if id not in self.ids:
             self.ids.append(id)
 
@@ -112,6 +115,9 @@ class Optimizer(object):
         void
 
         """
+        if class_name in self.config.ignore:
+            return
+
         if class_name not in self.classes:
             self.classes.append(class_name)
 
@@ -145,7 +151,7 @@ class Optimizer(object):
             for block in blocks:
                 contents = contents + block
 
-        ids_found = re.findall(r'(#\w+)(;)?', contents)
+        ids_found = re.findall(r'(#\w+?)(;)?', contents)
         classes_found = re.findall(r'(?!\.[0-9])\.\w+', contents)
         self.addIds(ids_found)
         self.addClasses(classes_found)
@@ -647,6 +653,7 @@ class Config(object):
         self.process_js = False
         self.ids_to_replace = []
         self.classes_to_replace = []
+        self.ignore = []
         self.single_file_path = ""
 
     def getArgCount(self):
@@ -746,6 +753,19 @@ class Config(object):
             opt_files.append(file.replace("." + ext, ".opt." + ext))
         return opt_files
 
+    def setIgnore(self, value):
+        """sets what classes and ids we should ignore and not shorten
+
+        Arguments:
+        value -- comma separated list of classes or ids
+
+        Returns:
+        void
+
+        """
+        for name in value.split(","):
+            self.ignore.append(name)
+
     def setCssFiles(self, value):
         """sets css files from command line argument
 
@@ -776,7 +796,7 @@ class Config(object):
 
         """
         values = value.split(",")
-        
+
         # multiple files
         if not Util.isDir(values[0].rstrip("/")):
             self.views_is_dir = False
@@ -826,7 +846,7 @@ class Config(object):
             return
 
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "c:v:jhprfet", ["css=", "views=", "js=", "help", "chain-chomp", "rewrite-css", "css-file=", "view-ext=", "tidy"])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjhprfeti", ["css=", "views=", "js=", "help", "chain-chomp", "rewrite-css", "css-file=", "view-ext=", "tidy", "ignore="])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -846,6 +866,8 @@ class Config(object):
                 self.setViewFiles(value)
             elif key in ("-j", "--js"):
                 self.setJsFiles(value)
+            elif key in ("-i", "--ignore"):
+                self.setIgnore(value)
             elif key in ("-r", "--rewrite-css"):
                 self.rewrite_css = True
             elif key in ("-f", "--css-file"):
