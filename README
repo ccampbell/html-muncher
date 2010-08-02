@@ -39,7 +39,8 @@ OPTIONAL:
 --js {path/to/js}            js files to rewrite (directory or comma separated files)
 --css-file {file_name}       file to use for optimized css (defaults to optimized.css)
 --view-ext {extension}       sets the extension to look for in the view directory (defaults to html)
---ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css (ie .sick_class,#sweet_id)
+--ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css
+                             (for example: --ignore .sick_class,#sweet_id,.other_class)
 --rewrite-css                rewrites <link href css tags in the views to use new css file
 --tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete
 --help                       shows help screen
