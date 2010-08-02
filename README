@@ -1,8 +1,8 @@
 =============
-   ABOUT
+  ABOUT
 =============
 
-css-optimizer is a python script that converts css class names and ids to simpler names for making the filesize smaller and obfuscating your css code
+css-optimizer is a python utility that converts css class names and ids to simpler names for making the file size smaller and obfuscating your css code
 it also converts corresponding html and javascript class references
 
 if your stylesheet starts out looking like this:
@@ -27,12 +27,28 @@ it will be rewritten as
 
 .a #a{font-size:1.5em;color:#F737FF;}.a #b{letter-spacing:0;}.b{border:2px solid #aaa;-webkit-border-radius:5px;background:#eee;padding:5px;}
 
+=============
+  ARGUMENTS
+=============
+
+REQUIRED:
+--views {path/to/views}      html files to rewrite (comma separated directories or comma separated files)
+                             NOTE: if you pass views alone they are treated as if they have inline css/js
+OPTIONAL:
+--css {path/to/css}          css files to rewrite (directory or comma separated files)
+--js {path/to/js}            js files to rewrite (directory or comma separated files)
+--css-file {file_name}       file to use for optimized css (defaults to optimized.css)
+--view-ext {extension}       sets the extension to look for in the view directory (defaults to html)
+--ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css (ie .sick_class,#sweet_id)
+--rewrite-css                rewrites <link href css tags in the views to use new css file
+--tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete
+--help                       shows help screen
 
 =============
-   USAGE
+  EXAMPLES
 =============
 
-to try this out for yourself and update a bunch of stylesheets and views:
+to update a bunch of stylesheets and views:
 cd css-optimizer
 ./optimize.py --css demo/css --views demo/views --rewrite-css
 
@@ -41,4 +57,8 @@ cd css-optimizer
 ./optimize.py demo/single-file/view-with-inline-styles.html
 
 you can also select specific files:
+cd css-optimizer
 ./optimize.py --css file1.css,file2.css --views view1.html,view2.html
+
+for views you can select specific directories
+./optimize.py --css /my/css/directory --views /view/directory1,/view/directory2,/view/directory3
