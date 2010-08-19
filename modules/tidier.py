@@ -1,14 +1,23 @@
-import urllib, httplib, re
+import urllib, httplib, re, random, string
 
 class Tidier(object):
     url = "codebeautifier.com:80"
     @staticmethod
     def run(css):
-        params = {"css_text" : css, 
-                  "url" : "", 
-                  "template" : 3, 
-                  "custom" : "", 
-                  "merge_selectors" : 2, 
+        # crazy crazy crazy hack to allow for special css background properties
+        # tokenize them with random strings and then replace them at the end
+        matches = re.findall(r'(background: ?-.*)', css);
+        tokens = {}
+        for match in matches:
+            special_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(20)) + ":0;"
+            tokens[special_string] = match
+            css = css.replace(match, special_string)
+
+        params = {"css_text" : css,
+                  "url" : "",
+                  "template" : 3,
+                  "custom" : "",
+                  "merge_selectors" : 2,
                   "optimise_shorthands" : 1,
                   "compress_c" : "on",
                   "compress_fw" : "on",
@@ -16,7 +25,7 @@ class Tidier(object):
                   "rbs" : "on",
                   "css_level" : "CSS2.1",
                   "file_output" : "file_output"}
-        
+
         encoded_params = urllib.urlencode(params)
         try:
             print "requesting minified css from codebeautifier"
@@ -29,7 +38,7 @@ class Tidier(object):
 
             html = response.read()
             match = re.search(r'<a href=\"(.*)\" ?>Download</a>', html)
-        
+
             print "requesting new css file"
             conn = httplib.HTTPConnection(Tidier.url)
             conn.request("GET", "/" + match.group(1))
@@ -39,4 +48,10 @@ class Tidier(object):
             print "error getting tidied up css from codebeautifier.com"
             return css
 
-        return response.read()
+        css = response.read()
+
+        # replace all the special tokens
+        for key, value in tokens.items():
+            css = css.replace(key, value)
+
+        return css
