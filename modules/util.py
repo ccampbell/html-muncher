@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, shutil
+import os, shutil, glob
 
 class Util:
     """collection of various utility functions"""
@@ -30,7 +30,7 @@ class Util:
 
         """
         return os.path.isfile(path)
-        
+
     @staticmethod
     def isDir(path):
         """determines if a path is a directory
@@ -43,6 +43,15 @@ class Util:
 
         """
         return os.path.isdir(path)
+
+    @staticmethod
+    def getFilesFromDir(path, extension = ""):
+        path = path + "/*"
+
+        if not extension == "":
+            path = path + "." + extension.lstrip(".")
+
+        return glob.glob(path)
 
     @staticmethod
     def dump(obj):
@@ -72,6 +81,11 @@ class Util:
         return path.split(".").pop()
 
     @staticmethod
+    def prependExtension(ext, path):
+        current_ext = Util.getExtension(path)
+        return path.replace("." + current_ext, "." + ext + "." + current_ext)
+
+    @staticmethod
     def getBasePath(path):
         """gets the base directory one level up from the current path
 
@@ -86,6 +100,10 @@ class Util:
         last_bit = bits.pop()
         return "/".join(bits)
         # return "/".join(bits).rstrip(last_bit)
+
+    @staticmethod
+    def getFileName(path):
+        return path.replace(Util.getBasePath(path), "").lstrip("/")
 
     @staticmethod
     def unlink(path):
