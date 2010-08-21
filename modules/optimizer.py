@@ -172,8 +172,11 @@ class Optimizer(object):
 
             class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
             if selector[0] in class_selectors:
-                class_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2]).group(2)
-                self.addClass("." + class_to_add)
+                class_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2])
+                if class_to_add is None:
+                    continue
+
+                self.addClass("." + class_to_add.group(2))
                 continue
 
             if selector[0] in self.config.custom_selectors:
@@ -471,6 +474,8 @@ class Optimizer(object):
             css = css.replace(key + ",", value + ",")
             css = css.replace(key + " ", value + " ")
             css = css.replace(key + ":", value + ":")
+            # if key == ".svg":
+                # print "replacing " + key + " with " + value
 
         return css
 
@@ -577,7 +582,11 @@ class Optimizer(object):
 
                 # custom selectors
                 if block[0] in self.config.custom_selectors:
-                    new_selector = old_selector.replace(key, value)
+                    # print "trying to replace " + key + " with " + value + " in " + old_selector
+                    new_selector = old_selector.replace(key + ".", value + ".")
+                    new_selector = new_selector.replace(key + " ", value + " ")
+                    new_selector = new_selector.replace(key + "\"", value + "\"")
+                    new_selector = new_selector.replace(key + "\'", value + "\'")
                 else:
                     new_selector = old_selector.replace("'" + key[1:] + "'", "'" + value[1:] + "'")
                     new_selector = new_selector.replace("\"" + key[1:] + "\"", "\"" + value[1:] + "\"")
