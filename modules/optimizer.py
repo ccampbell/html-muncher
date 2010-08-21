@@ -104,7 +104,6 @@ class Optimizer(object):
         """
         for id in ids:
             if id[1] is '':
-                print id
                 self.addId(id[0])
 
     def addClass(self, class_name):
