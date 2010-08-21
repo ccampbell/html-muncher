@@ -19,6 +19,10 @@ h1 {
     color: green;
 }
 
+.box.purple {
+    color: purple;
+}
+
 .underline {
     text-decoration: underline;
 }
