@@ -501,7 +501,7 @@ class Optimizer(object):
         list
 
         """
-        return re.compile(r'\<script.*\>(.*?)\<\/script\>', re.DOTALL).findall(html)
+        return re.compile(r'\<script(?! src).*?\>(.*?)\<\/script\>', re.DOTALL).findall(html)
 
     def optimizeJavascript(self, path):
         """optimizes javascript for a specific file
