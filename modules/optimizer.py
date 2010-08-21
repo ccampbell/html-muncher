@@ -71,9 +71,9 @@ class Optimizer(object):
         self.processMaps()
 
         # optimize everything
-        self.optimizeFiles(self.config.getCssFiles(), self.optimizeCss)
-        self.optimizeFiles(self.config.getViewFiles(), self.optimizeHtml, self.config.view_extension)
-        self.optimizeFiles(self.config.getJsFiles(), self.optimizeJavascript)
+        self.optimizeFiles(self.config.css, self.optimizeCss)
+        self.optimizeFiles(self.config.views, self.optimizeHtml, self.config.view_extension)
+        self.optimizeFiles(self.config.js, self.optimizeJavascript)
 
     def processCss(self):
         """gets all css files from config and processes them to see what to replace
@@ -82,7 +82,7 @@ class Optimizer(object):
         void
 
         """
-        files = self.config.getCssFiles()
+        files = self.config.css
         for file in files:
             if not Util.isDir(file):
                 self.processCssFile(file)
@@ -91,7 +91,7 @@ class Optimizer(object):
                 self.processCssFile(dir_file)
 
     def processViews(self):
-        files = self.config.getViewFiles()
+        files = self.config.views
         for file in files:
             if not Util.isDir(file):
                 self.processView(file)
@@ -106,7 +106,7 @@ class Optimizer(object):
         void
 
         """
-        files = self.config.getJsFiles()
+        files = self.config.js
         for file in files:
             if not Util.isDir(file):
                 self.processJsFile(file)
@@ -157,7 +157,7 @@ class Optimizer(object):
             for block in blocks:
                 contents = contents + block
 
-        selectors = self.getJsSelectors(contents)
+        selectors = self.getJsSelectors(contents, self.config.custom_selectors)
         for selector in selectors:
             id_selectors = ["getElementById"]
 
@@ -165,23 +165,23 @@ class Optimizer(object):
                 id_selectors.append("$")
 
             if selector[0] in id_selectors:
-                self.addId("#" + selector[3])
+                self.addId("#" + selector[2].strip("\"").strip("'"))
                 continue
 
             class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
             if selector[0] in class_selectors:
-                self.addClass("." + selector[3])
+                class_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2]).group(2)
+                self.addClass("." + class_to_add)
                 continue
 
-            bits = selector[3].split(" ")
-            for bit in bits:
-                if not bit:
-                    continue
+            if selector[0] in self.config.custom_selectors:
+                matches = re.findall(r'((#|\.)[a-zA-Z0-9_]*)', selector[2])
+                for match in matches:
+                    if match[1] == "#":
+                        self.addId(match[0])
+                        continue
 
-                if bit[0] == ".":
-                    self.addClass(bit)
-                elif bit[0] == "#":
-                    self.addId(bit)
+                    self.addClass(match[0])
 
     def processMaps(self):
         """loops through classes and ids to process to determine shorter names to use for them
@@ -531,7 +531,7 @@ class Optimizer(object):
         return js
 
     @staticmethod
-    def getJsSelectors(js):
+    def getJsSelectors(js, custom_selectors = []):
         """finds all js selectors within a js block
 
         Arguments:
@@ -541,7 +541,9 @@ class Optimizer(object):
         list
 
         """
-        return re.findall(r'(getElementById|getElementsByClassName|hasClass|addClass|removeClass|\$)?(\((\'|\")(.*?)(\'|\")\))', js)
+        valid_selectors = "getElementById|getElementsByClassName|hasClass|addClass|removeClass|\$"
+        valid_selectors = valid_selectors + "|" + "|".join(custom_selectors)
+        return re.findall(r'(' + valid_selectors + ')(\((.*?)\))', js)
 
     def replaceJsFromDictionary(self, dictionary, js):
         """replaces any instances of classes and ids based on a dictionary
@@ -561,19 +563,24 @@ class Optimizer(object):
             id_selectors.append("$")
 
         for key, value in dictionary.items():
-            blocks = self.getJsSelectors(js)
+            blocks = self.getJsSelectors(js, self.config.custom_selectors)
             for block in blocks:
-                id_selectors
-                if block[0] in id_selectors and key[0] == "#" and key[1:] == block[3]:
-                    js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
+                if key[0] == "#" and block[0] in class_selectors:
                     continue
 
-                if block[0] in class_selectors and key[0] == "." and key[1:] == block[3]:
-                    js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
+                if key[0] == "." and block[0] in id_selectors:
                     continue
 
-                new_block = self.replaceClassBlock(block[3], key, value)
-                js = js.replace(block[1], "(" + block[2] + new_block + block[4] + ")")
+                old_selector = block[0] + block[1]
+
+                # custom selectors
+                if block[0] in self.config.custom_selectors:
+                    new_selector = old_selector.replace(key, value)
+                else:
+                    new_selector = old_selector.replace("'" + key[1:] + "'", "'" + value[1:] + "'")
+                    new_selector = new_selector.replace("\"" + key[1:] + "\"", "\"" + value[1:] + "\"")
+
+                js = js.replace(old_selector, new_selector)
 
         return js
 
@@ -590,6 +597,7 @@ class Config(object):
         self.views = []
         self.js = []
         self.ignore = []
+        self.custom_selectors = []
         self.framework = None
         self.view_extension = "html"
         self.tidy = False
@@ -616,26 +624,26 @@ class Config(object):
         for name in value.split(","):
             self.ignore.append(name)
 
+    def setCustomSelectors(self, value):
+        for value in value.split(","):
+            self.custom_selectors.append(value.lstrip("."))
+
     def setCssFiles(self, value):
         for value in value.split(","):
             self.css.append(value.rstrip("/"))
-
-    def getCssFiles(self):
-        return self.css
 
     def setViewFiles(self, value):
         for value in value.split(","):
             self.views.append(value.rstrip("/"))
 
-    def getViewFiles(self):
-        return self.views
-
     def setJsFiles(self, value):
         for value in value.split(","):
             self.js.append(value.rstrip("/"))
 
-    def getJsFiles(self):
-        return self.js
+    def setFramework(self, name):
+        self.framework = name.lower()
+        if self.framework == "jquery":
+            self.custom_selectors.append("$")
 
     def processArgs(self):
         """processes arguments passed in via command line and sets config settings accordingly
@@ -645,7 +653,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetif", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework="])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetifs", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework=", "selectors="])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -670,7 +678,9 @@ class Config(object):
             elif key in ("-t", "--tidy"):
                 self.tidy = True
             elif key in ("-f", "--framework"):
-                self.framework = value
+                self.setFramework(value)
+            elif key in ("-s", "--selectors"):
+                self.setCustomSelectors(value)
 
         # you have to at least have a view
         if views_set is False:
