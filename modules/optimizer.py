@@ -41,40 +41,151 @@ class Optimizer(object):
 
         print "\nUSAGE:"
         # print "single file:"
-        print "./optimize.py path/to/single/file.html"
         # print "entire directories:"
-        print "./optimize.py --css path/to/css --views path/to/views"
         # print "list of files:"
-        print "./optimize.py --css file1.css,file2.css,file3.css --views file1.html,file3.html --js main.js"
+        print "./optimize.py --css file1.css,/path/to/css1,file2.css,file3.css --views /path/to/views1,file1.html,/path/to/views2/,file3.html --js main.js,/path/to/js"
         print "\nREQUIRED ARGUMENTS:"
-        print "--views {path/to/views}      html files to rewrite (comma separated directories or comma separated files)"
+        print "--views {path/to/views}      html files to rewrite (comma separated list of directories and files)"
         print "                             NOTE: if you pass views alone they are treated as if they have inline css/js"
         print "\nOPTIONAL ARGUMENTS:"
-        print "--css {path/to/css}          css files to rewrite (directory or comma separated files)"
-        print "--js {path/to/js}            js files to rewrite (directory or comma separated files)"
-        print "--css-file {file_name}       file to use for optimized css (defaults to optimized.css)"
+        print "--css {path/to/css}          css files to rewrite (comma separated list of directories and files)"
+        print "--js {path/to/js}            js files to rewrite (comma separated list of directories and files)"
         print "--view-ext {extension}       sets the extension to look for in the view directory (defaults to html)"
         print "--ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css (ie .sick_class,#sweet_id)"
-        print "--rewrite-css                rewrites <link href css tags in the views to use new css file"
         print "--tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete"
         print "--help                       shows this menu\n"
         sys.exit(2)
 
-    def setupFiles(self):
-        """sets up files for this run by deleting directories/files created in previous runs
+    def run(self):
+        """runs the optimizer and does all the magic
 
         Returns:
         void
 
         """
-        Util.unlink(self.config.getCssFile())
-        Util.unlink(self.config.getCssMinFile())
+        self.processCss()
+        self.processViews()
+        self.processJs()
 
-        for dir in self.config.getViewDirs():
-            Util.unlinkDir(dir + "_optimized")
+        # maps all classes and ids found to shorter names
+        self.processMaps()
 
-        if self.config.js_dir is not None:
-            Util.unlinkDir(self.config.js_dir + "_optimized")
+        # optimize everything
+        self.optimizeFiles(self.config.getCssFiles(), self.optimizeCss)
+        self.optimizeFiles(self.config.getViewFiles(), self.optimizeHtml, self.config.view_extension)
+        self.optimizeFiles(self.config.getJsFiles(), self.optimizeJavascript)
+
+    def processCss(self):
+        """gets all css files from config and processes them to see what to replace
+
+        Returns:
+        void
+
+        """
+        files = self.config.getCssFiles()
+        for file in files:
+            if not Util.isDir(file):
+                self.processCssFile(file)
+                continue
+            for dir_file in Util.getFilesFromDir(file):
+                self.processCssFile(dir_file)
+
+    def processViews(self):
+        files = self.config.getViewFiles()
+        for file in files:
+            if not Util.isDir(file):
+                self.processView(file)
+                continue
+            for dir_file in Util.getFilesFromDir(file):
+                self.processView(dir_file)
+
+    def processJs(self):
+        """gets all js files from config and processes them to see what to replace
+
+        Returns:
+        void
+
+        """
+        files = self.config.getJsFiles()
+        for file in files:
+            if not Util.isDir(file):
+                self.processJsFile(file)
+                continue
+            for dir_file in Util.getFilesFromDir(file):
+                self.processJsFile(dir_file)
+
+    def processView(self, file):
+        self.processCssFile(file, True)
+        self.processJsFile(file, True)
+
+    def processCssFile(self, path, inline = False):
+        """processes a single css file to find all classes and ids to replace
+
+        Arguments:
+        path -- path to css file to process
+
+        Returns:
+        void
+
+        """
+        contents = Util.fileGetContents(path)
+        if inline is True:
+            blocks = self.getCssBlocks(contents)
+            contents = ""
+            for block in blocks:
+                contents = contents + block
+
+        ids_found = re.findall(r'(#\w+)(.*;)?', contents)
+        classes_found = re.findall(r'(?!\.[0-9])\.\w+', contents)
+        self.addIds(ids_found)
+        self.addClasses(classes_found)
+
+    def processJsFile(self, path, inline = False):
+        """processes a single js file to find all classes and ids to replace
+
+        Arguments:
+        path -- path to css file to process
+
+        Returns:
+        void
+
+        """
+        contents = Util.fileGetContents(path)
+        if inline is True:
+            blocks = self.getJsBlocks(contents)
+            contents = ""
+            for block in blocks:
+                contents = contents + block
+
+        selectors = self.getJsSelectors(contents)
+        for selector in selectors:
+            if selector[0] == "getElementById":
+                self.addId("#" + selector[3])
+                continue
+
+            bits = selector[3].split(" ")
+            for bit in bits:
+                if not bit:
+                    continue
+
+                if bit[0] == ".":
+                    self.addClass(bit)
+                elif bit[0] == "#":
+                    self.addId(bit)
+
+    def processMaps(self):
+        """loops through classes and ids to process to determine shorter names to use for them
+        and creates a dictionary with these mappings
+
+        Returns:
+        void
+
+        """
+        for class_name in self.classes:
+            self.class_map[class_name] = "." + VarFactory.getNext("class")
+
+        for id in self.ids:
+            self.id_map[id] = "#" + VarFactory.getNext("id")
 
     def addId(self, id):
         """adds a single id to the master list of ids
@@ -135,98 +246,49 @@ class Optimizer(object):
         for class_name in classes:
             self.addClass(class_name)
 
-    def processCssFile(self, path):
-        """processes a single css file to find all classes and ids to replace
+    def optimizeFiles(self, paths, callback, extension = ""):
+        """loops through a bunch of files and directories, runs them through a callback, then saves them to disk
 
         Arguments:
-        path -- path to css file to process
+        paths -- array of files and directories
+        callback -- function to process each file with
 
         Returns:
         void
 
         """
-        contents = Util.fileGetContents(path)
-        if self.config.single_file_mode is True:
-            blocks = self.getCssBlocks(contents)
-            contents = ""
-            for block in blocks:
-                contents = contents + block
-
-        ids_found = re.findall(r'(#\w+)(.*;)?', contents)
-        classes_found = re.findall(r'(?!\.[0-9])\.\w+', contents)
-        self.addIds(ids_found)
-        self.addClasses(classes_found)
-
-    def processJsFile(self, path):
-        """processes a single js file to find all classes and ids to replace
-
-        Arguments:
-        path -- path to css file to process
-
-        Returns:
-        void
-
-        """
-        contents = Util.fileGetContents(path)
-        if self.config.single_file_mode is True:
-            blocks = self.getJsBlocks(contents)
-            contents = ""
-            for block in blocks:
-                contents = contents + block
-
-        selectors = self.getJsSelectors(contents)
-        for selector in selectors:
-            if selector[0] == "getElementById":
-                self.addId("#" + selector[3])
+        for file in paths:
+            if not Util.isDir(file):
+                content = callback(file)
+                new_path = Util.prependExtension("opt", file)
+                print "optimizing " + file + " to " + new_path
+                Util.filePutContents(new_path, content)
                 continue
 
-            bits = selector[3].split(" ")
-            for bit in bits:
-                if not bit:
-                    continue
+            directory = file + "_opt"
+            Util.unlinkDir(directory)
+            print "creating directory " + directory
+            os.mkdir(directory)
+            for dir_file in Util.getFilesFromDir(file, extension):
+                content = callback(dir_file)
+                new_path = directory + "/" + Util.getFileName(dir_file)
+                print "optimizing " + dir_file + " to " + new_path
+                Util.filePutContents(new_path, content)
 
-                if bit[0] == ".":
-                    self.addClass(bit)
-                elif bit[0] == "#":
-                    self.addId(bit)
+    def optimizeCss(self, path):
+        """replaces classes and ids with new values in a css file
 
-    def processStyles(self):
-        """gets all css files from config and processes them to see what to replace
-
-        Returns:
-        void
-
-        """
-        files = self.config.getCssFiles()
-        for file in files:
-            self.processCssFile(file)
-
-    def processJs(self):
-        """gets all js files from config and processes them to see what to replace
+        Arguments:
+        path -- string path to css file to optimize
 
         Returns:
-        void
+        string
 
         """
-        files = self.config.getJsFiles()
-        for file in files:
-            self.processJsFile(file)
+        css = Util.fileGetContents(path)
+        return self.replaceCss(css)
 
-    def processMaps(self):
-        """loops through classes and ids to process to determine shorter names to use for them
-        and creates a dictionary with these mappings
-
-        Returns:
-        void
-
-        """
-        for class_name in self.classes:
-            self.class_map[class_name] = "." + VarFactory.getNext("class")
-
-        for id in self.ids:
-            self.id_map[id] = "#" + VarFactory.getNext("id")
-
-    def optimizeHtml(self, path, rewrite_css):
+    def optimizeHtml(self, path):
         """replaces classes and ids with new values in an html file
 
         Uses:
@@ -234,7 +296,6 @@ class Optimizer(object):
 
         Arguments:
         path -- string path to file to optimize
-        rewrite_css -- boolean whether or not we should also rewrite <link href attributes
 
         Returns:
         string
@@ -244,9 +305,6 @@ class Optimizer(object):
         html = self.replaceHtml(html)
         html = self.optimizeCssBlocks(html)
         html = self.optimizeJavascriptBlocks(html)
-
-        if rewrite_css is True:
-            html = self.rewriteHeaderCss(html)
 
         return html
 
@@ -363,26 +421,7 @@ class Optimizer(object):
         list
 
         """
-        return re.compile(r'\<style type=\"text\/css\"\>(.*?)\<\/style\>', re.DOTALL).findall(html)
-
-    def optimizeCss(self, paths):
-        """takes a bunch of css files and combines them into one
-
-        Arguments:
-        paths -- list of css file paths
-
-        Returns:
-        string
-
-        """
-        combined_css = ""
-        for path in paths:
-            print "adding " + path + " to " + self.config.getCssFile()
-            css = Util.fileGetContents(path)
-            css = self.replaceCss(css)
-            combined_css = combined_css + "/*\n * " + path + "\n */\n" + css + "\n\n"
-
-        return combined_css
+        return re.compile(r'\<style.*\>(.*?)\<\/style\>', re.DOTALL).findall(html)
 
     def replaceCss(self, css):
         """single call to handle replacing ids and classes
@@ -452,7 +491,7 @@ class Optimizer(object):
         list
 
         """
-        return re.compile(r'\<script type=\"text\/javascript\"\>(.*?)\<\/script\>', re.DOTALL).findall(html)
+        return re.compile(r'\<script.*\>(.*?)\<\/script\>', re.DOTALL).findall(html)
 
     def optimizeJavascript(self, path):
         """optimizes javascript for a specific file
@@ -516,115 +555,6 @@ class Optimizer(object):
 
         return js
 
-    def rewriteHeaderCss(self, html):
-        """rewrites <link href tags in header to use new optimized css path
-
-        Arguments:
-        html -- contents of the file we are replacing
-
-        Returns:
-        string
-
-        """
-        new_lines = []
-        i = 0
-        prefix = ""
-
-        base_view_path = Util.getBasePath(self.config.view_dir)
-        base_css_path = Util.getBasePath(self.config.css_dir)
-
-        if base_css_path == base_view_path:
-            prefix = ".."
-
-        for line in html.split("\n"):
-            if "link href" not in line or "text/css" not in line:
-                new_lines.append(line)
-                continue
-
-            if i is 0:
-                css_min_file = self.config.getCssMinFile().replace(base_view_path, "")
-                new_lines.append('    <link href="' + prefix + css_min_file + '" rel="stylesheet" type="text/css" />')
-                i = i + 1
-
-        html = "\n".join(map(str, new_lines))
-        return html
-
-    def run(self):
-        """runs the optimizer and does all the magic
-
-        Returns:
-        void
-
-        """
-        self.processStyles()
-        self.processJs()
-        self.processMaps()
-
-        # first optimize all the css files
-        css = self.optimizeCss(self.config.getCssFiles())
-        Util.filePutContents(self.config.getCssFile(), css)
-
-        # minimize css if the tidy option is set
-        if self.config.tidy is True:
-            from tidier import Tidier
-            css = Tidier.run(css)
-            Util.filePutContents(self.config.getCssMinFile(), css)
-
-        # next optimize the views
-        for dir in self.config.getViewDirs():
-            paths = self.config.getViewFiles(dir)
-            os.mkdir(dir + "_optimized")
-            for path in paths:
-                print "optimizing " + path
-                html = self.optimizeHtml(path, self.config.rewrite_css)
-                Util.filePutContents(dir + "_optimized/" + path.split("/").pop(), html)
-
-        # finally if there is any js optimize that
-        if self.config.process_js is False:
-            return
-
-        paths = self.config.getJsFiles()
-        os.mkdir(self.config.js_dir + "_optimized")
-        for path in paths:
-            print "optimizing " + path
-            js = self.optimizeJavascript(path)
-            Util.filePutContents(self.config.js_dir + "_optimized/" + path.split("/").pop(), js)
-
-
-
-class OptimizerSingleFile(Optimizer):
-    """child class of Optimizer to handle processing a single file"""
-    def setupFiles(self):
-        """overwrites parent setupFiles() method
-
-        Returns:
-        void
-
-        """
-        ext = Util.getExtension(self.config.single_file_path)
-        self.config.single_file_opt_path = self.config.single_file_path.replace("." + ext, ".opt." + ext)
-        Util.unlink(self.config.single_file_opt_path)
-
-    def run(self):
-        """overwrites parent run() method
-
-        Returns:
-        void
-
-        """
-        self.processStyles()
-        self.processJs()
-        self.processMaps()
-        print "optimizing " + self.config.single_file_path + " to " + self.config.single_file_opt_path
-        html = self.optimizeHtml(self.config.single_file_path, False)
-        Util.filePutContents(self.config.single_file_opt_path, html);
-
-        if self.config.replace_chains is True:
-            from reducer import ChainReducerSingleFile
-            chain_reducer = ChainReducerSingleFile(self.config)
-            chain_reducer.run()
-
-
 class Config(object):
     """configuration object for handling all config options for css-optimizer"""
     def __init__(self):
@@ -634,28 +564,12 @@ class Config(object):
         void
 
         """
-        self.single_file_mode = False
-        self.multiple_runs = False
-        self.tidy = False
-
-        self.css_is_dir = True
-        self.views_is_dir = True
-        self.js_is_dir = True
-        self.css_files = []
-        self.view_files = []
-        self.view_dirs = []
-        self.js_files = []
-        self.js_dir = None
-
-        self.new_css_file = "optimized.css"
-        self.view_extension = "html"
-        self.rewrite_css = False
-        self.replace_chains = False
-        self.process_js = False
-        self.ids_to_replace = []
-        self.classes_to_replace = []
+        self.css = []
+        self.views = []
+        self.js = []
         self.ignore = []
-        self.single_file_path = ""
+        self.view_extension = "html"
+        self.tidy = False
 
     def getArgCount(self):
         """gets the count of how many arguments are present
@@ -665,94 +579,6 @@ class Config(object):
 
         """
         return len(sys.argv)
-
-    def getCssFile(self):
-        """gets the path to the css file to write all the combined css to
-
-        Returns:
-        string
-
-        """
-        return self.css_dir + "/" + self.new_css_file
-
-    def getCssMinFile(self):
-        """gets the path to write the minimized css file to
-
-        Returns:
-        string
-
-        """
-        return self.getCssFile().replace(".css", ".min.css");
-
-    def getCssFiles(self):
-        """gets all css files to process for this run
-
-        Returns:
-        list
-
-        """
-        files = []
-        if self.single_file_mode is True:
-            files.append(self.single_file_path)
-            return files
-
-        if self.css_is_dir is False:
-            return self.css_files
-
-        return glob.glob(self.css_dir + "/*.css")
-
-    def getJsFiles(self):
-        """gets all js files to process for this run
-
-        Returns:
-        list
-
-        """
-        files = []
-        if self.single_file_mode is True:
-            files.append(self.single_file_path)
-            return files
-
-        if self.js_is_dir is False:
-            return self.js_files
-
-        if self.js_dir is None:
-            return files
-
-        return glob.glob(self.js_dir + "/*.js")
-
-    def getViewFiles(self, dir):
-        """gets all view files to process for this request
-
-        Returns:
-        list
-
-        """
-        files = []
-        if self.views_is_dir is False:
-            return self.view_files
-
-        if self.single_file_mode is True:
-            files.append(self.single_file_path)
-            return files
-
-        return glob.glob(dir + "/*." + self.view_extension)
-
-    def getViewDirs(self):
-        return self.view_dirs
-
-    def getOptimizedViewFiles(self):
-        """gets optimized filepaths of all view files
-
-        Returns:
-        list
-
-        """
-        opt_files = []
-        for file in self.getViewFiles():
-            ext = Util.getExtension(file)
-            opt_files.append(file.replace("." + ext, ".opt." + ext))
-        return opt_files
 
     def setIgnore(self, value):
         """sets what classes and ids we should ignore and not shorten
@@ -768,67 +594,25 @@ class Config(object):
             self.ignore.append(name)
 
     def setCssFiles(self, value):
-        """sets css files from command line argument
+        for value in value.split(","):
+            self.css.append(value.rstrip("/"))
 
-        Arguments:
-        value -- directory or comma separated file list
-
-        Returns:
-        void
-
-        """
-        value = value.rstrip("/")
-        if Util.isDir(value):
-            self.css_dir = value
-            return
-
-        self.css_is_dir = False
-        self.css_files = value.split(",")
-        self.css_dir = Util.getBasePath(self.css_files[0])
+    def getCssFiles(self):
+        return self.css
 
     def setViewFiles(self, value):
-        """sets view files from command line argument
+        for value in value.split(","):
+            self.views.append(value.rstrip("/"))
 
-        Arguments:
-        value -- directory or comma separated file list
-
-        Returns:
-        void
-
-        """
-        values = value.split(",")
-
-        # multiple files
-        if not Util.isDir(values[0].rstrip("/")):
-            self.views_is_dir = False
-            self.view_files = values
-            self.view_dirs.append(Util.getBasePath(self.view_files[0]))
-            return
-
-        # multiple directories
-        for value in values:
-            value = value.rstrip("/")
-            self.view_dirs.append(value)
+    def getViewFiles(self):
+        return self.views
 
     def setJsFiles(self, value):
-        """sets js files from command line argument
+        for value in value.split(","):
+            self.js.append(value.rstrip("/"))
 
-        Arguments:
-        value -- directory or comma separated file list
-
-        Returns:
-        void
-
-        """
-        self.process_js = True
-        value = value.rstrip("/")
-        if Util.isDir(value):
-            self.js_dir = value
-            return
-
-        self.js_is_dir = False
-        self.js_files = value.split(",")
-        self.js_dir = Util.getBasePath(self.js_files[0])
+    def getJsFiles(self):
+        return self.js
 
     def processArgs(self):
         """processes arguments passed in via command line and sets config settings accordingly
@@ -837,22 +621,12 @@ class Config(object):
         void
 
         """
-        # if we only pass in one argument let's assume we are running in single file mode
-        if self.getArgCount() == 2:
-            self.single_file_mode = True
-            self.single_file_path = sys.argv[1]
-            if not Util.fileExists(self.single_file_path):
-                print "file does not exist at path: " + self.single_file_path
-                sys.exit(2)
-            return
-
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjhprfeti", ["css=", "views=", "js=", "help", "chain-chomp", "rewrite-css", "css-file=", "view-ext=", "tidy", "ignore="])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjheti", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore="])
         except:
             Optimizer.showUsage()
             sys.exit(2)
 
-        css_set = False
         views_set = False
 
         for key, value in opts:
@@ -860,7 +634,6 @@ class Config(object):
                 Optimizer.showUsage()
                 sys.exit(2)
             elif key in ("-c", "--css"):
-                css_set = True
                 self.setCssFiles(value)
             elif key in ("-v", "--views"):
                 views_set = True
@@ -869,12 +642,6 @@ class Config(object):
                 self.setJsFiles(value)
             elif key in ("-i", "--ignore"):
                 self.setIgnore(value)
-            elif key in ("-r", "--rewrite-css"):
-                self.rewrite_css = True
-            elif key in ("-f", "--css-file"):
-                self.new_css_file = value
-            elif key in ("-p", "--chain-chomp"):
-                self.replace_chains = True
             elif key in ("-e", "--view-ext"):
                 self.view_extension = value
             elif key in ("-t", "--tidy"):
@@ -884,8 +651,3 @@ class Config(object):
         if views_set is False:
             Optimizer.showUsage()
             sys.exit(2)
-
-        # if you have a views but no css we process them in single file mode
-        if css_set is False:
-            self.multiple_runs = True
-            self.single_file_mode = True

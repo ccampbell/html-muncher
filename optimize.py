@@ -15,28 +15,11 @@
 # limitations under the License.
 
 import sys
-from modules.optimizer import Config, Optimizer, OptimizerSingleFile
+from modules.optimizer import Config, Optimizer
 
 config = Config()
 config.processArgs()
-
-multiple_runs = False
-if config.multiple_runs is True:
-    multiple_runs = True
-elif config.single_file_mode is True:
-    optimizer = OptimizerSingleFile(config)
-else:
-    optimizer = Optimizer(config)
-
-if multiple_runs is True:
-    for file in config.getViewFiles(None):
-        config.single_file_path = file
-        optimizer = OptimizerSingleFile(config)
-        optimizer.setupFiles()
-        optimizer.run()
-    print "done"
-    sys.exit(2)
-
-optimizer.setupFiles()
+optimizer = Optimizer(config)
 optimizer.run()
+
 print "done"
