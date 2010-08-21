@@ -52,6 +52,8 @@ class Optimizer(object):
         print "--js {path/to/js}            js files to rewrite (comma separated list of directories and files)"
         print "--view-ext {extension}       sets the extension to look for in the view directory (defaults to html)"
         print "--ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css (ie .sick_class,#sweet_id)"
+        print "--framework                  name of js framework to use for selectors (currently only jquery or mootools)"
+        print "--selectors                  name of custom selector for example if you have $.qs(\"#test\") this param would be qs"
         print "--tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete"
         print "--help                       shows this menu\n"
         sys.exit(2)
@@ -643,7 +645,7 @@ class Config(object):
     def setFramework(self, name):
         self.framework = name.lower()
         if self.framework == "jquery":
-            self.custom_selectors.append("$")
+            self.custom_selectors.append("$").append("jQuery")
 
     def processArgs(self):
         """processes arguments passed in via command line and sets config settings accordingly

@@ -37,9 +37,11 @@ REQUIRED:
 OPTIONAL:
 --css {path/to/css}          css files to rewrite (comma separated list of directories and files)
 --js {path/to/js}            js files to rewrite (comma separated list of directories and files)
---view-ext {extension}       sets the extension to look for in the view directory (defaults to html)
+--view-ext {extension}       sets the extension to look for in the view directories (defaults to html)
 --ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css
                              (for example: --ignore .sick_class,#sweet_id,.other_class)
+--framework                  name of js framework to use for selectors (currently only jquery or mootools)
+--selectors                  name of custom selector for example if you have $.qs(\"#test\") this param would be qs
 --tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete
 --help                       shows help screen
 
