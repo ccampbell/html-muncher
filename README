@@ -32,16 +32,14 @@ it will be rewritten as
 =============
 
 REQUIRED:
---views {path/to/views}      html files to rewrite (comma separated directories or comma separated files)
+--views {path/to/views}      html files to rewrite (comma separated list of directories and files)
                              NOTE: if you pass views alone they are treated as if they have inline css/js
 OPTIONAL:
---css {path/to/css}          css files to rewrite (directory or comma separated files)
---js {path/to/js}            js files to rewrite (directory or comma separated files)
---css-file {file_name}       file to use for optimized css (defaults to optimized.css)
+--css {path/to/css}          css files to rewrite (comma separated list of directories and files)
+--js {path/to/js}            js files to rewrite (comma separated list of directories and files)
 --view-ext {extension}       sets the extension to look for in the view directory (defaults to html)
 --ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css
                              (for example: --ignore .sick_class,#sweet_id,.other_class)
---rewrite-css                rewrites <link href css tags in the views to use new css file
 --tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete
 --help                       shows help screen
 
@@ -51,15 +49,15 @@ OPTIONAL:
 
 to update a bunch of stylesheets and views:
 cd css-optimizer
-./optimize.py --css demo/css --views demo/views --rewrite-css
+./optimize.py --css demo/css --views demo/views
 
 to update a single file with inline styles/javascript:
 cd css-optimizer
-./optimize.py demo/single-file/view-with-inline-styles.html
+./optimize.py --views demo/single-file/view-with-inline-styles.html
 
 you can also select specific files:
 cd css-optimizer
 ./optimize.py --css file1.css,file2.css --views view1.html,view2.html
 
-for views you can select specific directories
-./optimize.py --css /my/css/directory --views /view/directory1,/view/directory2,/view/directory3
+or you can mix and match files and directories
+./optimize.py --css /my/css/directory,global.css --views /view/directory1,/view/directory2,/view/directory3,template.html
