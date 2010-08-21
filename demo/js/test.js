@@ -4,8 +4,9 @@ $ = {
     }
 };
 
-window.onload = function() 
+window.onload = function()
 {
     $.qs("#special").innerHTML = "new text for this paragraph";
     document.getElementById("special").innerHTML = "change it again";
+    var italic = document.getElementsByClassName('italic');
 }

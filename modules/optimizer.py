@@ -163,6 +163,10 @@ class Optimizer(object):
                 self.addId("#" + selector[3])
                 continue
 
+            if selector[0] == "getElementsByClassName":
+                self.addClass("." + selector[3])
+                continue
+
             bits = selector[3].split(" ")
             for bit in bits:
                 if not bit:
@@ -531,7 +535,7 @@ class Optimizer(object):
         list
 
         """
-        return re.findall(r'(getElementById)?(\((\'|\")(.*?)(\'|\")\))', js)
+        return re.findall(r'(getElementById|getElementsByClassName)?(\((\'|\")(.*?)(\'|\")\))', js)
 
     def replaceJsFromDictionary(self, dictionary, js):
         """replaces any instances of classes and ids based on a dictionary
@@ -550,6 +554,11 @@ class Optimizer(object):
                 if block[0] == 'getElementById' and key[0] == "#" and key[1:] == block[3]:
                     js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
                     continue
+
+                if block[0] == 'getElementsByClassName' and key[0] == "." and key[1:] == block[3]:
+                    js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
+                    continue
+
                 new_block = self.replaceClassBlock(block[3], key, value)
                 js = js.replace(block[1], "(" + block[2] + new_block + block[4] + ")")
 
