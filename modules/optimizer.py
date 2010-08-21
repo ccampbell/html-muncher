@@ -159,11 +159,17 @@ class Optimizer(object):
 
         selectors = self.getJsSelectors(contents)
         for selector in selectors:
-            if selector[0] == "getElementById":
+            id_selectors = ["getElementById"]
+
+            if self.config.framework == "mootools":
+                id_selectors.append("$")
+
+            if selector[0] in id_selectors:
                 self.addId("#" + selector[3])
                 continue
 
-            if selector[0] == "getElementsByClassName":
+            class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
+            if selector[0] in class_selectors:
                 self.addClass("." + selector[3])
                 continue
 
@@ -535,7 +541,7 @@ class Optimizer(object):
         list
 
         """
-        return re.findall(r'(getElementById|getElementsByClassName)?(\((\'|\")(.*?)(\'|\")\))', js)
+        return re.findall(r'(getElementById|getElementsByClassName|hasClass|addClass|removeClass|\$)?(\((\'|\")(.*?)(\'|\")\))', js)
 
     def replaceJsFromDictionary(self, dictionary, js):
         """replaces any instances of classes and ids based on a dictionary
@@ -548,14 +554,21 @@ class Optimizer(object):
         string
 
         """
+        class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
+        id_selectors = ["getElementById"]
+
+        if self.config.framework == "mootools":
+            id_selectors.append("$")
+
         for key, value in dictionary.items():
             blocks = self.getJsSelectors(js)
             for block in blocks:
-                if block[0] == 'getElementById' and key[0] == "#" and key[1:] == block[3]:
+                id_selectors
+                if block[0] in id_selectors and key[0] == "#" and key[1:] == block[3]:
                     js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
                     continue
 
-                if block[0] == 'getElementsByClassName' and key[0] == "." and key[1:] == block[3]:
+                if block[0] in class_selectors and key[0] == "." and key[1:] == block[3]:
                     js = js.replace(block[0] + block[1], block[0] + "(" + block[2] + value[1:] + block[4] + ")")
                     continue
 
@@ -577,6 +590,7 @@ class Config(object):
         self.views = []
         self.js = []
         self.ignore = []
+        self.framework = None
         self.view_extension = "html"
         self.tidy = False
 
@@ -631,7 +645,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjheti", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore="])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetif", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework="])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -655,6 +669,8 @@ class Config(object):
                 self.view_extension = value
             elif key in ("-t", "--tidy"):
                 self.tidy = True
+            elif key in ("-f", "--framework"):
+                self.framework = value
 
         # you have to at least have a view
         if views_set is False:
