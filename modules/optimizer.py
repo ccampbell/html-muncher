@@ -271,6 +271,9 @@ class Optimizer(object):
             if not Util.isDir(file):
                 content = callback(file)
                 new_path = Util.prependExtension("opt", file)
+                if minimize is True:
+                    print "minimizing " + file
+                    content = self.minimize(content)
                 print "optimizing " + file + " to " + new_path
                 Util.filePutContents(new_path, content)
                 continue
