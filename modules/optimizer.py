@@ -295,8 +295,7 @@ class Optimizer(object):
 
     def minimize(self, content):
         content = re.sub(r'\n', '', content)
-        content = re.sub(r'\s\s+', ' ', content)
-        content = re.sub(r'> <', '><', content)
+        content = re.sub(r'\s\s+', '', content)
         return content
 
     def optimizeCss(self, path):
