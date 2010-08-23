@@ -159,19 +159,14 @@ class Optimizer(object):
             for block in blocks:
                 contents = contents + block
 
-        selectors = self.getJsSelectors(contents, self.config.custom_selectors)
+        selectors = self.getJsSelectors(contents, self.config)
         for selector in selectors:
-            id_selectors = ["getElementById"]
 
-            if self.config.framework == "mootools":
-                id_selectors.append("$")
-
-            if selector[0] in id_selectors:
+            if selector[0] in self.config.id_selectors:
                 self.addId("#" + selector[2].strip("\"").strip("'"))
                 continue
 
-            class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
-            if selector[0] in class_selectors:
+            if selector[0] in self.config.class_selectors:
                 class_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2])
                 if class_to_add is None:
                     continue
@@ -538,7 +533,7 @@ class Optimizer(object):
         return js
 
     @staticmethod
-    def getJsSelectors(js, custom_selectors = []):
+    def getJsSelectors(js, config):
         """finds all js selectors within a js block
 
         Arguments:
@@ -548,8 +543,8 @@ class Optimizer(object):
         list
 
         """
-        valid_selectors = "getElementById|getElementsByClassName|hasClass|addClass|removeClass|\$"
-        valid_selectors = valid_selectors + "|" + "|".join(custom_selectors)
+        valid_selectors = "|".join(config.custom_selectors) + "|" + "|".join(config.id_selectors) + "|" + "|".join(config.class_selectors)
+        valid_selectors = valid_selectors.replace('$', '\$')
         return re.findall(r'(' + valid_selectors + ')(\((.*?)\))', js)
 
     def replaceJsFromDictionary(self, dictionary, js):
@@ -563,19 +558,13 @@ class Optimizer(object):
         string
 
         """
-        class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
-        id_selectors = ["getElementById"]
-
-        if self.config.framework == "mootools":
-            id_selectors.append("$")
-
         for key, value in dictionary.items():
-            blocks = self.getJsSelectors(js, self.config.custom_selectors)
+            blocks = self.getJsSelectors(js, self.config)
             for block in blocks:
-                if key[0] == "#" and block[0] in class_selectors:
+                if key[0] == "#" and block[0] in self.config.class_selectors:
                     continue
 
-                if key[0] == "." and block[0] in id_selectors:
+                if key[0] == "." and block[0] in self.config.id_selectors:
                     continue
 
                 old_selector = block[0] + block[1]
@@ -608,6 +597,8 @@ class Config(object):
         self.views = []
         self.js = []
         self.ignore = []
+        self.class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
+        self.id_selectors = ["getElementById"]
         self.custom_selectors = []
         self.framework = None
         self.view_extension = "html"
@@ -639,6 +630,14 @@ class Config(object):
         for value in value.split(","):
             self.custom_selectors.append(value.lstrip("."))
 
+    def addClassSelectors(self, value):
+        for value in value.split(","):
+            self.class_selectors.append(value)
+
+    def addIdSelectors(self, value):
+        for value in value.split(","):
+            self.id_selectors.append(value)
+
     def setCssFiles(self, value):
         for value in value.split(","):
             self.css.append(value.rstrip("/"))
@@ -655,6 +654,9 @@ class Config(object):
         self.framework = name.lower()
         if self.framework == "jquery":
             self.custom_selectors.append("$").append("jQuery")
+        elif self.framework == "mootools":
+            self.id_selectors.append("$")
+            self.custom_selectors.append("getElement")
 
     def processArgs(self):
         """processes arguments passed in via command line and sets config settings accordingly
@@ -664,7 +666,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetifs", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework=", "selectors="])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetifsld", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors="])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -692,6 +694,10 @@ class Config(object):
                 self.setFramework(value)
             elif key in ("-s", "--selectors"):
                 self.setCustomSelectors(value)
+            elif key in ("-l", "--class-selectors"):
+                self.addClassSelectors(value)
+            elif key in ("-d", "--id-selectors"):
+                self.addIdSelectors(value)
 
         # you have to at least have a view
         if views_set is False:
