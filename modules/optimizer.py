@@ -614,7 +614,7 @@ class Config(object):
         self.framework = None
         self.view_extension = "html"
         self.tidy = False
-        self.compress_html = True
+        self.compress_html = False
 
     def getArgCount(self):
         """gets the count of how many arguments are present
