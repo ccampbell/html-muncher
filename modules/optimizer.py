@@ -74,7 +74,7 @@ class Optimizer(object):
 
         # optimize everything
         self.optimizeFiles(self.config.css, self.optimizeCss)
-        self.optimizeFiles(self.config.views, self.optimizeHtml, self.config.view_extension)
+        self.optimizeFiles(self.config.views, self.optimizeHtml, self.config.view_extension, self.config.compress_html)
         self.optimizeFiles(self.config.js, self.optimizeJavascript)
 
     def processCss(self):
@@ -256,7 +256,7 @@ class Optimizer(object):
         for class_name in classes:
             self.addClass(class_name)
 
-    def optimizeFiles(self, paths, callback, extension = ""):
+    def optimizeFiles(self, paths, callback, extension = "", minimize = False):
         """loops through a bunch of files and directories, runs them through a callback, then saves them to disk
 
         Arguments:
@@ -281,9 +281,20 @@ class Optimizer(object):
             os.mkdir(directory)
             for dir_file in Util.getFilesFromDir(file, extension):
                 content = callback(dir_file)
+                if minimize is True:
+                    print "minimizing " + dir_file
+                    content = self.minimize(content)
+
                 new_path = directory + "/" + Util.getFileName(dir_file)
                 print "optimizing " + dir_file + " to " + new_path
+
                 Util.filePutContents(new_path, content)
+
+    def minimize(self, content):
+        content = re.sub(r'\n', '', content)
+        content = re.sub(r'\s\s+', ' ', content)
+        content = re.sub(r'> <', '><', content)
+        return content
 
     def optimizeCss(self, path):
         """replaces classes and ids with new values in a css file
@@ -603,6 +614,7 @@ class Config(object):
         self.framework = None
         self.view_extension = "html"
         self.tidy = False
+        self.compress_html = True
 
     def getArgCount(self):
         """gets the count of how many arguments are present
@@ -666,7 +678,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetifsld", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors="])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetifsldm", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html"])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -698,6 +710,8 @@ class Config(object):
                 self.addClassSelectors(value)
             elif key in ("-d", "--id-selectors"):
                 self.addIdSelectors(value)
+            elif key in ("-m", "--compress-html"):
+                self.compress_html = True
 
         # you have to at least have a view
         if views_set is False:
