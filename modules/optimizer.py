@@ -504,7 +504,6 @@ class Optimizer(object):
             if self.config.compress_html:
                 matches = re.findall(r'((:?)\/\/.*?\n|\/\*.*?\*\/)', new_js, re.S)
                 for single_match in matches:
-                    print single_match
                     if single_match[1] == ':':
                         continue
                     new_js = new_js.replace(single_match[0], '');
