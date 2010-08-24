@@ -294,6 +294,7 @@ class Optimizer(object):
                 Util.filePutContents(new_path, content)
 
     def minimize(self, content):
+        content = re.sub('//.*?\n|/\*.*?\*/', '', content, re.S)
         content = re.sub(r'\n', '', content)
         content = re.sub(r'\s\s+', '', content)
         return content
