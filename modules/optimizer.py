@@ -500,9 +500,10 @@ class Optimizer(object):
         matches = self.getJsBlocks(html)
 
         for match in matches:
+            new_js = match
             if self.config.compress_html:
-                match = re.sub('//.*?\n|/\*.*?\*/', '', match, re.S)
-            new_js = self.replaceJavascript(match)
+                new_js = re.sub(r'\/\/.*?\n|\/\*.*?\*\/', '', new_js, re.S)
+            new_js = self.replaceJavascript(new_js)
             html = html.replace(match, new_js)
 
         return html
