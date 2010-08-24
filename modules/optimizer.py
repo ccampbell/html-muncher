@@ -294,7 +294,6 @@ class Optimizer(object):
                 Util.filePutContents(new_path, content)
 
     def minimize(self, content):
-        content = re.sub('//.*?\n|/\*.*?\*/', '', content, re.S)
         content = re.sub(r'\n', '', content)
         content = re.sub(r'\s\s+', '', content)
         return content
@@ -501,7 +500,9 @@ class Optimizer(object):
         matches = self.getJsBlocks(html)
 
         for match in matches:
-            new_js = self.replaceJavascript(match)
+            if self.config.compress_html:
+                new_js = re.sub('//.*?\n|/\*.*?\*/', '', match, re.S)
+            new_js = self.replaceJavascript(new_js)
             html = html.replace(match, new_js)
 
         return html
