@@ -161,8 +161,13 @@ class Optimizer(object):
 
         selectors = self.getJsSelectors(contents, self.config)
         for selector in selectors:
-
             if selector[0] in self.config.id_selectors:
+                if ',' in selector[2]:
+                    id_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2])
+                    if id_to_add is None:
+                        continue
+                    self.addId("#" + id_to_add.group(2))
+
                 self.addId("#" + selector[2].strip("\"").strip("'"))
                 continue
 
@@ -502,7 +507,7 @@ class Optimizer(object):
         for match in matches:
             new_js = match
             if self.config.compress_html:
-                matches = re.findall(r'((:?)\/\/.*?\n|\/\*.*?\*\/)', new_js, re.S)
+                matches = re.findall(r'((:?)\/\/.*?\n|\/\*.*?\*\/)', new_js, re.DOTALL)
                 for single_match in matches:
                     if single_match[1] == ':':
                         continue
@@ -565,7 +570,7 @@ class Optimizer(object):
         """
         valid_selectors = "|".join(config.custom_selectors) + "|" + "|".join(config.id_selectors) + "|" + "|".join(config.class_selectors)
         valid_selectors = valid_selectors.replace('$', '\$')
-        return re.findall(r'(' + valid_selectors + ')(\((.*?)\))', js)
+        return re.findall(r'(' + valid_selectors + ')(\((.*?)\))', js, re.DOTALL)
 
     def replaceJsFromDictionary(self, dictionary, js):
         """replaces any instances of classes and ids based on a dictionary
@@ -591,7 +596,6 @@ class Optimizer(object):
 
                 # custom selectors
                 if block[0] in self.config.custom_selectors:
-                    # print "trying to replace " + key + " with " + value + " in " + old_selector
                     new_selector = old_selector.replace(key + ".", value + ".")
                     new_selector = new_selector.replace(key + " ", value + " ")
                     new_selector = new_selector.replace(key + "\"", value + "\"")
