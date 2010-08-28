@@ -24,4 +24,5 @@ window.onload = function()
     var cool = $.qs("#one_id.class_thing", test);
     var another_weird_thing = $.qs(".class1.class2 #another_id");
     $.qs(".selector1 > .selector2 .selector3");
+    var test = document.querySelector(".selector1");
 }

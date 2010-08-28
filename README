@@ -25,7 +25,21 @@ if your stylesheet starts out looking like this:
 
 it will be rewritten as
 
-.a #a{font-size:1.5em;color:#F737FF;}.a #b{letter-spacing:0;}.b{border:2px solid #aaa;-webkit-border-radius:5px;background:#eee;padding:5px;}
+.a #a {
+    font-size: 1.5em;
+    color: #F737FF;
+}
+
+.a #b {
+    letter-spacing: 0;
+}
+
+.b {
+    border: 2px solid #aaa;
+    -webkit-border-radius: 5px;
+    background: #eee;
+    padding: 5px;
+}
 
 =============
   ARGUMENTS
@@ -33,17 +47,20 @@ it will be rewritten as
 
 REQUIRED:
 --views {path/to/views}      html files to rewrite (comma separated list of directories and files)
-                             NOTE: if you pass views alone they are treated as if they have inline css/js
+
 OPTIONAL:
 --css {path/to/css}          css files to rewrite (comma separated list of directories and files)
 --js {path/to/js}            js files to rewrite (comma separated list of directories and files)
---view-ext {extension}       sets the extension to look for in the view directories (defaults to html)
---ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css
-                             (for example: --ignore .sick_class,#sweet_id,.other_class)
 --framework                  name of js framework to use for selectors (currently only jquery or mootools)
---selectors                  name of custom selector for example if you have $.qs(\"#test\") this param would be qs
---tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete
---help                       shows help screen
+--view-ext {extension}       sets the extension to look for in the view directory (defaults to html)
+--ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css (ie .sick_class,#sweet_id)
+--selectors                  comma separated custom selectors using css selectors
+                             for example if you have $.qs("#test .div") this param would be qs
+--id-selectors               comma separated id selectors with strings
+                             for example if you are using .addId("test") this param would be addId
+--class-selectors            comma separated class selectors with strings
+                             for example if you have selectClass("my_class") this param would be selectClass
+--help                       shows this menu
 
 =============
   EXAMPLES

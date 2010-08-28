@@ -1,5 +1,4 @@
-#!/usr/bin/python
-
+#!/usr/bin/env python
 # Copyright 2010 Craig Campbell
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,21 +39,21 @@ class Optimizer(object):
         print "======================"
 
         print "\nUSAGE:"
-        # print "single file:"
-        # print "entire directories:"
-        # print "list of files:"
         print "./optimize.py --css file1.css,/path/to/css1,file2.css,file3.css --views /path/to/views1,file1.html,/path/to/views2/,file3.html --js main.js,/path/to/js"
         print "\nREQUIRED ARGUMENTS:"
         print "--views {path/to/views}      html files to rewrite (comma separated list of directories and files)"
-        print "                             NOTE: if you pass views alone they are treated as if they have inline css/js"
         print "\nOPTIONAL ARGUMENTS:"
         print "--css {path/to/css}          css files to rewrite (comma separated list of directories and files)"
         print "--js {path/to/js}            js files to rewrite (comma separated list of directories and files)"
+        print "--framework                  name of js framework to use for selectors (currently only jquery or mootools)"
         print "--view-ext {extension}       sets the extension to look for in the view directory (defaults to html)"
         print "--ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css (ie .sick_class,#sweet_id)"
-        print "--framework                  name of js framework to use for selectors (currently only jquery or mootools)"
-        print "--selectors                  name of custom selector for example if you have $.qs(\"#test\") this param would be qs"
-        print "--tidy                       uses css tidy to optimize and minimize css after all the other optimizing is complete"
+        print "--selectors                  comma separated custom selectors using css selectors"
+        print "                             for example if you have $.qs(\"#test .div\") this param would be qs"
+        print "--id-selectors               comma separated id selectors with strings"
+        print "                             for example if you are using .addId(\"test\") this param would be addId"
+        print "--class-selectors            comma separated class selectors with strings"
+        print "                             for example if you have selectClass(\"my_class\") this param would be selectClass"
         print "--help                       shows this menu\n"
         sys.exit(2)
 
@@ -429,10 +428,6 @@ class Optimizer(object):
             match = self.replaceCss(match)
             result_css = result_css + match
 
-            if self.config.tidy is True:
-                from tidier import Tidier
-                result_css = Tidier.run(result_css)
-
         if len(matches):
             return html.replace(matches[0], result_css)
 
@@ -623,10 +618,9 @@ class Config(object):
         self.ignore = []
         self.class_selectors = ["getElementsByClassName", "hasClass", "addClass", "removeClass"]
         self.id_selectors = ["getElementById"]
-        self.custom_selectors = []
+        self.custom_selectors = ["document.querySelector"]
         self.framework = None
         self.view_extension = "html"
-        self.tidy = False
         self.compress_html = False
 
     def getArgCount(self):
@@ -691,7 +685,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjhetifsldm", ["css=", "views=", "js=", "help", "view-ext=", "tidy", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html"])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjheifsldm", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html"])
         except:
             Optimizer.showUsage()
             sys.exit(2)
@@ -713,8 +707,6 @@ class Config(object):
                 self.setIgnore(value)
             elif key in ("-e", "--view-ext"):
                 self.view_extension = value
-            elif key in ("-t", "--tidy"):
-                self.tidy = True
             elif key in ("-f", "--framework"):
                 self.setFramework(value)
             elif key in ("-s", "--selectors"):
