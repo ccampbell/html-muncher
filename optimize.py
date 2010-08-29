@@ -15,7 +15,8 @@
 # limitations under the License.
 
 import sys
-from modules.optimizer import Config, Optimizer
+from modules.config import Config
+from modules.optimizer import Optimizer
 
 config = Config()
 config.processArgs()
