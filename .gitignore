@@ -1,0 +1,7 @@
+*.pyc
+*.opt.html
+*.opt.js
+*.opt.css
+demo/css_opt
+demo/js_opt
+demo/views_opt
