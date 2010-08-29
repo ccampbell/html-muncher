@@ -34,6 +34,7 @@ class Config(object):
         self.custom_selectors = ["document.querySelector"]
         self.framework = None
         self.view_extension = "html"
+        self.show_savings = False
         self.compress_html = False
 
     def getArgCount(self):
@@ -98,7 +99,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjheifsldm", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html"])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjheifsldmo", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings"])
         except:
             Optimizer.showUsage()
 
@@ -128,6 +129,8 @@ class Config(object):
                 self.addIdSelectors(value)
             elif key in ("-m", "--compress-html"):
                 self.compress_html = True
+            elif key in ("-o", "--show-savings"):
+                self.show_savings = True
 
         # you have to at least have a view
         if views_set is False:

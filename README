@@ -60,6 +60,7 @@ OPTIONAL:
                              for example if you are using .addId("test") this param would be addId
 --class-selectors            comma separated class selectors with strings
                              for example if you have selectClass("my_class") this param would be selectClass
+--show-savings               will output how many bytes were saved by munching
 --help                       shows this menu
 
 =============

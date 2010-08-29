@@ -17,6 +17,7 @@ import sys, re, glob, os
 from operator import itemgetter
 from util import Util
 from varfactory import VarFactory
+from sizetracker import SizeTracker
 
 class Optimizer(object):
     def __init__(self, config):
@@ -55,6 +56,7 @@ class Optimizer(object):
         print "                             for example if you are using .addId(\"test\") this param would be addId"
         print "--class-selectors            comma separated class selectors with strings"
         print "                             for example if you have selectClass(\"my_class\") this param would be selectClass"
+        print "--show-savings               will output how many bytes were saved by munching"
         print "--help                       shows this menu\n"
         sys.exit(2)
 
@@ -76,6 +78,9 @@ class Optimizer(object):
         self.optimizeFiles(self.config.css, self.optimizeCss)
         self.optimizeFiles(self.config.views, self.optimizeHtml, self.config.view_extension, self.config.compress_html)
         self.optimizeFiles(self.config.js, self.optimizeJavascript)
+
+        if self.config.show_savings:
+            print SizeTracker.savings()
 
     def processCss(self):
         """gets all css files from config and processes them to see what to replace
@@ -337,6 +342,9 @@ class Optimizer(object):
                     content = self.minimize(content)
                 print "optimizing " + file + " to " + new_path
                 Util.filePutContents(new_path, content)
+
+                if self.config.show_savings:
+                    SizeTracker.trackFile(file, new_path)
                 continue
 
             directory = file + "_opt"
@@ -353,6 +361,9 @@ class Optimizer(object):
                 print "optimizing " + dir_file + " to " + new_path
 
                 Util.filePutContents(new_path, content)
+
+                if self.config.show_savings:
+                    SizeTracker.trackFile(dir_file, new_path)
 
     def minimize(self, content):
         content = re.sub(r'\n', '', content)
