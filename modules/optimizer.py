@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import sys, re, glob, os
+from operator import itemgetter
 from util import Util
 from varfactory import VarFactory
 
@@ -25,8 +26,8 @@ class Optimizer(object):
         void
 
         """
-        self.ids = []
-        self.classes = []
+        self.id_counter = {}
+        self.class_counter = {}
         self.id_map = {}
         self.class_map = {}
         self.config = config
@@ -195,11 +196,69 @@ class Optimizer(object):
         void
 
         """
-        for class_name in self.classes:
-            self.class_map[class_name] = "." + VarFactory.getNext("class")
+        # reverse sort so we can figure out the biggest savings
+        classes = self.class_counter.items()
+        classes.sort(key = itemgetter(1), reverse=True)
 
-        for id in self.ids:
-            self.id_map[id] = "#" + VarFactory.getNext("id")
+        for class_name in classes:
+            self.class_map[class_name[0]] = "." + VarFactory.getNext("class")
+
+        ids = self.id_counter.items()
+        ids.sort(key = itemgetter(1), reverse=True)
+
+        for id in ids:
+            self.id_map[id[0]] = "#" + VarFactory.getNext("id")
+
+    def incrementIdCounter(self, name):
+        """called for every time an id is added to increment the bytes we will save
+
+        Arguments:
+        name -- string of id
+
+        Returns:
+        void
+
+        """
+        length = len(name)
+
+        if not name in self.id_counter:
+            self.id_counter[name] = length
+            return
+
+        self.id_counter[name] += length
+
+    def incrementClassCounter(self, name):
+        """called for every time a class is added to increment the bytes we will save
+
+        Arguments:
+        name -- string of class
+
+        Returns:
+        void
+
+        """
+        length = len(name)
+
+        if not name in self.class_counter:
+            self.class_counter[name] = length
+            return
+
+        self.class_counter[name] += length
+
+    def incrementCounter(self, name):
+        """called everytime a class or id is added
+
+        Arguments:
+        name -- string of class or id name
+
+        Returns:
+        void
+
+        """
+        if name[0] == "#":
+            return self.incrementIdCounter(name)
+
+        return self.incrementClassCounter(name)
 
     def addId(self, id):
         """adds a single id to the master list of ids
@@ -214,8 +273,7 @@ class Optimizer(object):
         if id in self.config.ignore:
             return
 
-        if id not in self.ids:
-            self.ids.append(id)
+        self.incrementCounter(id)
 
     def addIds(self, ids):
         """adds a list of ids to the master id list to replace
@@ -244,8 +302,7 @@ class Optimizer(object):
         if class_name in self.config.ignore:
             return
 
-        if class_name not in self.classes:
-            self.classes.append(class_name)
+        self.incrementCounter(class_name)
 
     def addClasses(self, classes):
         """adds a list of classes to the master class list to replace
