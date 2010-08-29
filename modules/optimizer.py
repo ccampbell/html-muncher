@@ -35,7 +35,7 @@ class Optimizer(object):
     def showUsage():
         """shows usage information for this script"""
         print "\n======================"
-        print "CSS-Optimizer thingy"
+        print "html-muncher or html om nom nom"
         print "======================"
 
         print "\nUSAGE:"
@@ -604,7 +604,7 @@ class Optimizer(object):
         return js
 
 class Config(object):
-    """configuration object for handling all config options for css-optimizer"""
+    """configuration object for handling all config options for html-muncher"""
     def __init__(self):
         """config object constructor
 

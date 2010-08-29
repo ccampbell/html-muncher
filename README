@@ -2,7 +2,7 @@
   ABOUT
 =============
 
-css-optimizer is a python utility that converts css class names and ids to simpler names for making the file size smaller and obfuscating your css code
+html-muncher is a python utility that converts css class names and ids to simpler names for making the file size smaller and obfuscating your css code
 it also converts corresponding html and javascript class references
 
 if your stylesheet starts out looking like this:
@@ -67,15 +67,15 @@ OPTIONAL:
 =============
 
 to update a bunch of stylesheets and views:
-cd css-optimizer
+cd html-muncher
 ./optimize.py --css demo/css --views demo/views
 
 to update a single file with inline styles/javascript:
-cd css-optimizer
+cd html-muncher
 ./optimize.py --views demo/single-file/view-with-inline-styles.html
 
 you can also select specific files:
-cd css-optimizer
+cd html-muncher
 ./optimize.py --css file1.css,file2.css --views view1.html,view2.html
 
 or you can mix and match files and directories
