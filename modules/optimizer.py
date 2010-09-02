@@ -142,7 +142,7 @@ class Optimizer(object):
             for block in blocks:
                 contents = contents + block
 
-        ids_found = re.findall(r'(#\w+)(.*;)?', contents)
+        ids_found = re.findall(r'((?<!\:\s)(?<!\:)#\w+)(\.|\{|,|\s)', contents, re.DOTALL)
         classes_found = re.findall(r'(?!\.[0-9])\.\w+', contents)
         self.addIds(ids_found)
         self.addClasses(classes_found)
@@ -291,8 +291,7 @@ class Optimizer(object):
 
         """
         for id in ids:
-            if id[1] is '':
-                self.addId(id[0])
+            self.addId(id[0])
 
     def addClass(self, class_name):
         """adds a single class to the master list of classes
