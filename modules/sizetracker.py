@@ -51,11 +51,20 @@ class SizeTracker(object):
         SizeTracker.addSize(new_path, True)
 
     @staticmethod
+    def getSize(bytes):
+        if bytes < 1024:
+            return str(bytes) + " bytes"
+
+        kb = float(bytes) / 1024
+        kb = round(kb, 2)
+        return str(kb) + " KB"
+
+    @staticmethod
     def savings():
         percent = 100 - (float(SizeTracker.new_size) / float(SizeTracker.original_size)) * 100
         gzip_percent = 100 - (float(SizeTracker.new_size_gzip) / float(SizeTracker.original_size_gzip)) * 100
 
-        string = "\noriginal size:   " + str(SizeTracker.original_size) + " bytes (" + str(SizeTracker.original_size_gzip) + " bytes gzipped)"
-        string += "\nmunched size:    " + str(SizeTracker.new_size) + " bytes (" + str(SizeTracker.new_size_gzip) + " bytes gzipped)"
+        string = "\noriginal size:   " + SizeTracker.getSize(SizeTracker.original_size) + " (" + SizeTracker.getSize(SizeTracker.original_size_gzip) + " gzipped)"
+        string += "\nmunched size:    " + SizeTracker.getSize(SizeTracker.new_size) + " (" + SizeTracker.getSize(SizeTracker.new_size_gzip) + " gzipped)"
         string += "\n                 saved " + str(round(percent, 2)) + "% off the original size (" + str(round(gzip_percent, 2)) + "% off the gzipped size)\n"
         return string

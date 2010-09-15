@@ -86,10 +86,10 @@ class Optimizer(object):
         self.output("munching js files...", False)
         self.optimizeFiles(self.config.js, self.optimizeJavascript)
 
+        self.output("done", False)
+
         if self.config.show_savings:
             self.output(SizeTracker.savings(), False)
-
-        self.output("done", False)
 
     def output(self, text, verbose_only = True):
         """outputs text during the script run
