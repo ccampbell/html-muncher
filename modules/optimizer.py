@@ -220,9 +220,6 @@ class Optimizer(object):
         void
 
         """
-        if Util.isDir(path):
-            return
-
         contents = Util.fileGetContents(path)
         if inline is True:
             blocks = self.getCssBlocks(contents)
@@ -245,9 +242,6 @@ class Optimizer(object):
         void
 
         """
-        if Util.isDir(path):
-            return
-
         contents = Util.fileGetContents(path)
         if inline is True:
             blocks = self.getJsBlocks(contents)
@@ -262,6 +256,10 @@ class Optimizer(object):
                     id_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2])
                     if id_to_add is None:
                         continue
+
+                    if not id_to_add.group(2):
+                        continue
+
                     self.addId("#" + id_to_add.group(2))
 
                 self.addId("#" + selector[2].strip("\"").strip("'"))
@@ -270,6 +268,9 @@ class Optimizer(object):
             if selector[0] in self.config.class_selectors:
                 class_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2])
                 if class_to_add is None:
+                    continue
+
+                if not class_to_add.group(2):
                     continue
 
                 self.addClass("." + class_to_add.group(2))
