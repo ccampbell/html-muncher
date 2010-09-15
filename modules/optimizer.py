@@ -253,7 +253,7 @@ class Optimizer(object):
         for selector in selectors:
             if selector[0] in self.config.id_selectors:
                 if ',' in selector[2]:
-                    id_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2])
+                    id_to_add = re.search(r'(\'|\")(.*?)(\'|\")', selector[2])
                     if id_to_add is None:
                         continue
 
@@ -266,7 +266,7 @@ class Optimizer(object):
                 continue
 
             if selector[0] in self.config.class_selectors:
-                class_to_add = re.search(r'(\'|\")(.*)(\'|\")', selector[2])
+                class_to_add = re.search(r'(\'|\")(.*?)(\'|\")', selector[2])
                 if class_to_add is None:
                     continue
 
