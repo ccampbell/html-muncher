@@ -57,6 +57,7 @@ class Optimizer(object):
         print "--class-selectors            comma separated class selectors with strings"
         print "                             for example if you have selectClass(\"my_class\") this param would be selectClass"
         print "--show-savings               will output how many bytes were saved by munching"
+        print "--verbose                    output more information while the script runs"
         print "--help                       shows this menu\n"
         sys.exit(2)
 
