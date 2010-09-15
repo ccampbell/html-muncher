@@ -67,20 +67,45 @@ class Optimizer(object):
         void
 
         """
+        self.output("searching for classes and ids...", False)
         self.processCss()
         self.processViews()
         self.processJs()
 
+        self.output("mapping classes and ids to new names...", False)
         # maps all classes and ids found to shorter names
         self.processMaps()
 
         # optimize everything
+        self.output("munching css files...", False)
         self.optimizeFiles(self.config.css, self.optimizeCss)
+
+        self.output("munching html files...", False)
         self.optimizeFiles(self.config.views, self.optimizeHtml, self.config.view_extension, self.config.compress_html)
+
+        self.output("munching js files...", False)
         self.optimizeFiles(self.config.js, self.optimizeJavascript)
 
         if self.config.show_savings:
-            print SizeTracker.savings()
+            self.output(SizeTracker.savings(), False)
+
+        self.output("done", False)
+
+    def output(self, text, verbose_only = True):
+        """outputs text during the script run
+
+        Arguments:
+        text -- string of text to output
+        verbose_only -- should we only show this in verbose mode?
+
+        Returns:
+        void
+
+        """
+        if verbose_only and not self.config.verbose:
+            return
+
+        print text
 
     def processCss(self):
         """gets all css files from config and processes them to see what to replace
@@ -135,6 +160,9 @@ class Optimizer(object):
         void
 
         """
+        if Util.isDir(path):
+            return
+
         contents = Util.fileGetContents(path)
         if inline is True:
             blocks = self.getCssBlocks(contents)
@@ -157,6 +185,9 @@ class Optimizer(object):
         void
 
         """
+        if Util.isDir(path):
+            return
+
         contents = Util.fileGetContents(path)
         if inline is True:
             blocks = self.getJsBlocks(contents)
@@ -334,35 +365,86 @@ class Optimizer(object):
         """
         for file in paths:
             if not Util.isDir(file):
-                content = callback(file)
-                new_path = Util.prependExtension("opt", file)
-                if minimize is True:
-                    print "minimizing " + file
-                    content = self.minimize(content)
-                print "optimizing " + file + " to " + new_path
-                Util.filePutContents(new_path, content)
-
-                if self.config.show_savings:
-                    SizeTracker.trackFile(file, new_path)
+                self.optimizeFile(file, callback, minimize)
                 continue
 
-            directory = file + "_opt"
-            Util.unlinkDir(directory)
-            print "creating directory " + directory
-            os.mkdir(directory)
-            for dir_file in Util.getFilesFromDir(file, extension):
-                content = callback(dir_file)
-                if minimize is True:
-                    print "minimizing " + dir_file
-                    content = self.minimize(content)
+            self.optimizeDirectory(file, callback, extension, minimize)
 
-                new_path = directory + "/" + Util.getFileName(dir_file)
-                print "optimizing " + dir_file + " to " + new_path
+    def optimizeFile(self, file, callback, minimize = False, new_path = None, prepend = "opt"):
+        """optimizes a single file
 
-                Util.filePutContents(new_path, content)
+        Arguments:
+        file -- path to file
+        callback -- function to run the file through
+        minimize -- whether or not we should minimize the file contents (html)
+        prepend -- what extension to prepend
 
-                if self.config.show_savings:
-                    SizeTracker.trackFile(dir_file, new_path)
+        Returns:
+        void
+
+        """
+        content = callback(file)
+        if new_path is None:
+            new_path = Util.prependExtension(prepend, file)
+        if minimize is True:
+            self.output("minimizing " + file)
+            content = self.minimize(content)
+        self.output("optimizing " + file + " to " + new_path)
+        Util.filePutContents(new_path, content)
+
+        if self.config.show_savings:
+            SizeTracker.trackFile(file, new_path)
+
+    def optimizeDirectory(self, path, callback, extension = "", minimize = False):
+        """optimizes a directory
+
+        Arguments:
+        path -- path to directory
+        callback -- function to run the file through
+        extension -- extension to search for in the directory
+        minimize -- whether or not we should minimize the file contents (html)
+
+        Returns:
+        void
+
+        """
+        directory = path + "_opt"
+        Util.unlinkDir(directory)
+        self.output("creating directory " + directory)
+        os.mkdir(directory)
+        for dir_file in Util.getFilesFromDir(path, extension):
+            if Util.isDir(dir_file):
+                self.optimizeSubdirectory(dir_file, callback, directory, extension, minimize)
+                continue
+
+            new_path = directory + "/" + Util.getFileName(dir_file)
+            self.optimizeFile(dir_file, callback, minimize, new_path)
+
+    def optimizeSubdirectory(self, path, callback, new_path, extension = "", minimize = False):
+        """optimizes a subdirectory within a directory being optimized
+
+        Arguments:
+        path -- path to directory
+        callback -- function to run the file through
+        new_path -- path to optimized parent directory
+        extension -- extension to search for in the directory
+        minimize -- whether or not we should minimize the file contents (html)
+
+        Returns:
+        void
+
+        """
+        subdir_path = new_path + "/" + path.split("/").pop()
+        Util.unlinkDir(subdir_path)
+        self.output("creating directory " + subdir_path)
+        os.mkdir(subdir_path)
+        for dir_file in Util.getFilesFromDir(path, extension):
+            if Util.isDir(dir_file):
+                self.optimizeSubdirectory(dir_file, callback, subdir_path, extension, minimize)
+                continue
+
+            new_file_path = subdir_path + "/" + Util.getFileName(dir_file)
+            self.optimizeFile(dir_file, callback, minimize, new_file_path)
 
     def minimize(self, content):
         content = re.sub(r'\n', '', content)

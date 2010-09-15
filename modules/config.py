@@ -36,6 +36,7 @@ class Config(object):
         self.view_extension = "html"
         self.show_savings = False
         self.compress_html = False
+        self.verbose = False
 
     def getArgCount(self):
         """gets the count of how many arguments are present
@@ -99,7 +100,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjheifsldmo", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings"])
+            opts, args = getopt.getopt(sys.argv[1:], "v:cjheifsldmor", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings", "verbose"])
         except:
             Optimizer.showUsage()
 
@@ -131,6 +132,8 @@ class Config(object):
                 self.compress_html = True
             elif key in ("-o", "--show-savings"):
                 self.show_savings = True
+            elif key in ("-r", "--verbose"):
+                self.verbose = True
 
         # you have to at least have a view
         if views_set is False:

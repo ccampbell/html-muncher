@@ -22,5 +22,3 @@ config = Config()
 config.processArgs()
 optimizer = Optimizer(config)
 optimizer.run()
-
-print "done"
