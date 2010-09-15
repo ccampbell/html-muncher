@@ -108,6 +108,23 @@ class Optimizer(object):
 
         print text
 
+    def processCssDirectory(self, file):
+        """processes a directory of css files
+
+        Arguments:
+        file -- path to directory
+
+        Returns:
+        void
+
+        """
+        for dir_file in Util.getFilesFromDir(file):
+            if Util.isDir(dir_file):
+                self.processCssDirectory(dir_file)
+                continue
+
+            self.processCssFile(dir_file)
+
     def processCss(self):
         """gets all css files from config and processes them to see what to replace
 
@@ -120,17 +137,54 @@ class Optimizer(object):
             if not Util.isDir(file):
                 self.processCssFile(file)
                 continue
-            for dir_file in Util.getFilesFromDir(file):
-                self.processCssFile(dir_file)
+            self.processCssDirectory(file)
+
+    def processViewDirectory(self, file):
+        """processes a directory of view files
+
+        Arguments:
+        file -- path to directory
+
+        Returns:
+        void
+
+        """
+        for dir_file in Util.getFilesFromDir(file):
+            if Util.isDir(dir_file):
+                self.processViewDirectory(dir_file)
+                continue
+
+            self.processView(dir_file)
 
     def processViews(self):
+        """processes all view files
+
+        Returns:
+        void
+
+        """
         files = self.config.views
         for file in files:
             if not Util.isDir(file):
                 self.processView(file)
                 continue
-            for dir_file in Util.getFilesFromDir(file):
-                self.processView(dir_file)
+            self.processViewDirectory(file)
+
+    def processJsDirectory(self, file):
+        """processes a directory of js files
+
+        Arguments:
+        file -- path to directory
+
+        Returns:
+        void
+
+        """
+        for dir_file in Util.getFilesFromDir(file):
+            if Util.isDir(dir_file):
+                self.processJsDirectory(dir_file)
+                continue
+            self.processJsFile(dir_file)
 
     def processJs(self):
         """gets all js files from config and processes them to see what to replace
@@ -144,10 +198,15 @@ class Optimizer(object):
             if not Util.isDir(file):
                 self.processJsFile(file)
                 continue
-            for dir_file in Util.getFilesFromDir(file):
-                self.processJsFile(dir_file)
+            self.processJsDirectory(file)
 
     def processView(self, file):
+        """processes a single view file
+
+        Arguments:
+        file -- path to directory
+
+        """
         self.processCssFile(file, True)
         self.processJsFile(file, True)
 
