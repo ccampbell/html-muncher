@@ -118,6 +118,9 @@ class Optimizer(object):
         void
 
         """
+        if ".svn" in file:
+            return
+
         for dir_file in Util.getFilesFromDir(file):
             if Util.isDir(dir_file):
                 self.processCssDirectory(dir_file)
@@ -149,6 +152,9 @@ class Optimizer(object):
         void
 
         """
+        if ".svn" in file:
+            return
+
         for dir_file in Util.getFilesFromDir(file):
             if Util.isDir(dir_file):
                 self.processViewDirectory(dir_file)
@@ -180,6 +186,9 @@ class Optimizer(object):
         void
 
         """
+        if ".svn" in file:
+            return
+
         for dir_file in Util.getFilesFromDir(file):
             if Util.isDir(dir_file):
                 self.processJsDirectory(dir_file)
@@ -456,6 +465,18 @@ class Optimizer(object):
         if self.config.show_savings:
             SizeTracker.trackFile(file, new_path)
 
+    def prepareDirectory(self, path):
+        if ".svn" in path:
+            return True
+
+        if Util.isDir(path):
+            return False
+
+        Util.unlinkDir(path)
+        self.output("creating directory " + path)
+        os.mkdir(path)
+        return False
+
     def optimizeDirectory(self, path, callback, extension = "", minimize = False):
         """optimizes a directory
 
@@ -470,9 +491,10 @@ class Optimizer(object):
 
         """
         directory = path + "_opt"
-        Util.unlinkDir(directory)
-        self.output("creating directory " + directory)
-        os.mkdir(directory)
+        skip = self.prepareDirectory(directory)
+        if skip is True:
+            return
+
         for dir_file in Util.getFilesFromDir(path, extension):
             if Util.isDir(dir_file):
                 self.optimizeSubdirectory(dir_file, callback, directory, extension, minimize)
@@ -496,9 +518,10 @@ class Optimizer(object):
 
         """
         subdir_path = new_path + "/" + path.split("/").pop()
-        Util.unlinkDir(subdir_path)
-        self.output("creating directory " + subdir_path)
-        os.mkdir(subdir_path)
+        skip = self.prepareDirectory(subdir_path)
+        if skip is True:
+            return
+
         for dir_file in Util.getFilesFromDir(path, extension):
             if Util.isDir(dir_file):
                 self.optimizeSubdirectory(dir_file, callback, subdir_path, extension, minimize)
