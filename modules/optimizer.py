@@ -71,7 +71,11 @@ class Optimizer(object):
         self.output("searching for classes and ids...", False)
         self.processCss()
         self.processViews()
-        self.processJs()
+
+        if self.config.js_manifest is None:
+            self.processJs()
+        else:
+            self.processJsManifest()
 
         self.output("mapping classes and ids to new names...", False)
         # maps all classes and ids found to shorter names
@@ -85,7 +89,11 @@ class Optimizer(object):
         self.optimizeFiles(self.config.views, self.optimizeHtml, self.config.view_extension, self.config.compress_html)
 
         self.output("munching js files...", False)
-        self.optimizeFiles(self.config.js, self.optimizeJavascript)
+
+        if self.config.js_manifest is None:
+            self.optimizeFiles(self.config.js, self.optimizeJavascript)
+        else:
+            self.optimizeJsManifest()
 
         self.output("done", False)
 
@@ -293,6 +301,34 @@ class Optimizer(object):
                         continue
 
                     self.addClass(match[0])
+
+    def processJsManifest(self):
+        contents = Util.fileGetContents(self.config.js_manifest)
+        ids = re.findall(r'\s+?(var\s)?\${1}([A-Z0-9_]+)\s?=\s?[\'|\"](.*?)[\'|\"][,|;]', contents)
+        classes = re.findall(r'\s+?(var\s)?\${2}([A-Z0-9_]+)\s?=\s?[\'|\"](.*?)[\'|\"][,|;]', contents)
+
+        self.manifest_ids = {}
+        self.manifest_classes = {}
+
+        for id in ids:
+            self.addId("#" + id[2])
+            self.manifest_ids[id[1]] = id[2]
+
+        for manifest_class in classes:
+            self.addClass("." + manifest_class[2])
+            self.manifest_classes[manifest_class[1]] = manifest_class[2]
+
+    def optimizeJsManifest(self):
+        contents = Util.fileGetContents(self.config.js_manifest)
+
+        for key, value in self.manifest_ids.items():
+            contents = re.sub(r'(\${1}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.id_map["#" + value].replace("#", "") + r'\3', contents)
+
+        for key, value in self.manifest_classes.items():
+            contents = re.sub(r'(\${2}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.class_map["." + value].replace(".", "") + r'\3', contents)
+
+        new_manifest = Util.prependExtension("opt", self.config.js_manifest)
+        Util.filePutContents(new_manifest, contents)
 
     def processMaps(self):
         """loops through classes and ids to process to determine shorter names to use for them
