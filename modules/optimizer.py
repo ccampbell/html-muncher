@@ -330,6 +330,9 @@ class Optimizer(object):
         new_manifest = Util.prependExtension("opt", self.config.js_manifest)
         Util.filePutContents(new_manifest, contents)
 
+        if self.config.show_savings:
+            SizeTracker.trackFile(self.config.js_manifest, new_manifest)
+
     def processMaps(self):
         """loops through classes and ids to process to determine shorter names to use for them
         and creates a dictionary with these mappings
