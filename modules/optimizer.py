@@ -327,6 +327,15 @@ class Optimizer(object):
         for key, value in self.manifest_classes.items():
             contents = re.sub(r'(\${2}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.class_map["." + value].replace(".", "") + r'\3', contents)
 
+        if self.config.rewrite_constants:
+            constants = re.findall(r'(\s+?(var\s)?([A-Z0-9_]+)\s?=\s?[\'|\"](.*?)[\'|\"][,|;])', contents)
+            new_constants = {}
+            i = 0
+            for constant in constants:
+                i += 1
+                new_constant = re.sub(r'=(.*)([,|;])','= ' + str(i) + r'\2', constant[0])
+                contents = contents.replace(constant[0], new_constant)
+
         new_manifest = Util.prependExtension("opt", self.config.js_manifest)
         Util.filePutContents(new_manifest, contents)
 
@@ -572,6 +581,7 @@ class Optimizer(object):
     def minimize(self, content):
         content = re.sub(r'\n', '', content)
         content = re.sub(r'\s\s+', '', content)
+        content = re.sub(r'(<!--(?!\[if)(.*?)-->)', '', content, re.MULTILINE)
         return content
 
     def optimizeCss(self, path):
