@@ -37,6 +37,7 @@ class Config(object):
         self.js_manifest = None
         self.show_savings = False
         self.compress_html = False
+        self.rewrite_constants = False
         self.verbose = False
 
     def getArgCount(self):
@@ -101,42 +102,44 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "v:cjheifsldmora", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings", "verbose", "js-manifest="])
+            opts, args = getopt.getopt(sys.argv[1:], "", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings", "verbose", "js-manifest=", "rewrite-constants"])
         except:
             Optimizer.showUsage()
 
         views_set = False
 
         for key, value in opts:
-            if key in ("-h", "--help"):
+            if key == "--help":
                 Optimizer.showUsage()
-            elif key in ("-c", "--css"):
+            elif key == "--css":
                 self.setCssFiles(value)
-            elif key in ("-v", "--views"):
+            elif key == "--views":
                 views_set = True
                 self.setViewFiles(value)
-            elif key in ("-j", "--js"):
+            elif key == "--js":
                 self.setJsFiles(value)
-            elif key in ("-i", "--ignore"):
+            elif key == "--ignore":
                 self.setIgnore(value)
-            elif key in ("-e", "--view-ext"):
+            elif key == "--view-ext":
                 self.view_extension = value
-            elif key in ("-f", "--framework"):
+            elif key == "--framework":
                 self.setFramework(value)
-            elif key in ("-s", "--selectors"):
+            elif key == "--selectors":
                 self.setCustomSelectors(value)
-            elif key in ("-l", "--class-selectors"):
+            elif key == "--class-selectors":
                 self.addClassSelectors(value)
-            elif key in ("-d", "--id-selectors"):
+            elif key == "--id-selectors":
                 self.addIdSelectors(value)
-            elif key in ("-m", "--compress-html"):
+            elif key == "--compress-html":
                 self.compress_html = True
-            elif key in ("-o", "--show-savings"):
+            elif key == "--show-savings":
                 self.show_savings = True
-            elif key in ("-r", "--verbose"):
+            elif key == "--verbose":
                 self.verbose = True
-            elif key in ("-a", "--js-manifest"):
+            elif key == "--js-manifest":
                 self.js_manifest = value
+            elif key == "--rewrite-constants":
+                self.rewrite_constants = True
 
         # you have to at least have a view
         if views_set is False:
