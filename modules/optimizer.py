@@ -332,6 +332,10 @@ class Optimizer(object):
             new_constants = {}
             i = 0
             for constant in constants:
+                # underscore variables are ignored
+                if constant[2][0] == "_":
+                    continue
+
                 i += 1
                 new_constant = re.sub(r'=(.*)([,|;])','= ' + str(i) + r'\2', constant[0])
                 contents = contents.replace(constant[0], new_constant)
