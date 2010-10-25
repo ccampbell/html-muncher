@@ -69,6 +69,10 @@ class Optimizer(object):
 
         """
         self.output("searching for classes and ids...", False)
+
+        if self.config.js_manifest is not None:
+            self.outputJsWarnings()
+
         self.processCss()
         self.processViews()
 
@@ -99,6 +103,9 @@ class Optimizer(object):
 
         if self.config.show_savings:
             self.output(SizeTracker.savings(), False)
+
+    def outputJsWarnings(self):
+        pass
 
     def output(self, text, verbose_only = True):
         """outputs text during the script run
@@ -279,6 +286,10 @@ class Optimizer(object):
 
                     self.addId("#" + id_to_add.group(2))
 
+                # if this is something like document.getElementById(variable) don't add it
+                if not '\'' in selector[2] and not '"' in selector[2]:
+                    continue
+
                 self.addId("#" + selector[2].strip("\"").strip("'"))
                 continue
 
@@ -428,7 +439,11 @@ class Optimizer(object):
         void
 
         """
-        if id in self.config.ignore:
+        if id in self.config.ignore or id is '#':
+            return
+
+        # skip $ ids from manifest
+        if self.config.js_manifest is not None and id[1] == '$':
             return
 
         self.incrementCounter(id)
@@ -456,7 +471,11 @@ class Optimizer(object):
         void
 
         """
-        if class_name in self.config.ignore:
+        if class_name in self.config.ignore or class_name is '.':
+            return
+
+        # skip $$ class names from manifest
+        if self.config.js_manifest is not None and class_name[1:2] == '$$':
             return
 
         self.incrementCounter(class_name)
