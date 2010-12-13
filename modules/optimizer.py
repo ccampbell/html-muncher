@@ -870,7 +870,7 @@ class Optimizer(object):
         """
         valid_selectors = "|".join(config.custom_selectors) + "|" + "|".join(config.id_selectors) + "|" + "|".join(config.class_selectors)
         valid_selectors = valid_selectors.replace('$', '\$')
-        return re.findall(r'(' + valid_selectors + ')(\((.*?)\))', js, re.DOTALL)
+        return re.findall(r'(' + valid_selectors + ')(\(([^<>]*?)\))', js, re.DOTALL)
 
     def replaceJsFromDictionary(self, dictionary, js):
         """replaces any instances of classes and ids based on a dictionary
