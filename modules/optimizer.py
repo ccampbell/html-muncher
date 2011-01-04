@@ -334,7 +334,7 @@ class Optimizer(object):
 
         for key, value in self.manifest_ids.items():
             if "#" + value in self.id_map:
-                contents = re.sub(r'(\${1}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.id_map["#" + value].replace("#", "") + r'\3', contents)
+                contents = re.sub(r'((?<!\$)\${1}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.id_map["#" + value].replace("#", "") + r'\3', contents)
 
         for key, value in self.manifest_classes.items():
             if "." + value in self.class_map:
