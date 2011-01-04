@@ -333,10 +333,12 @@ class Optimizer(object):
         contents = Util.fileGetContents(self.config.js_manifest)
 
         for key, value in self.manifest_ids.items():
-            contents = re.sub(r'(\${1}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.id_map["#" + value].replace("#", "") + r'\3', contents)
+            if "#" + value in self.id_map:
+                contents = re.sub(r'(\${1}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.id_map["#" + value].replace("#", "") + r'\3', contents)
 
         for key, value in self.manifest_classes.items():
-            contents = re.sub(r'(\${2}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.class_map["." + value].replace(".", "") + r'\3', contents)
+            if "." + value in self.class_map:
+                contents = re.sub(r'(\${2}[A-Z0-9_]+\s?=\s?[\'|\"])(' + value + ')([\'|\"][,|;])', r'\1' + self.class_map["." + value].replace(".", "") + r'\3', contents)
 
         if self.config.rewrite_constants:
             constants = re.findall(r'(\s+?(var\s)?([A-Z0-9_]+)\s?=\s?[\'|\"](.*?)[\'|\"][,|;])', contents)
