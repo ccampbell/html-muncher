@@ -74,16 +74,16 @@ class VarFactory:
         if (index > 701):
             raise Exception("until my math skillz get better we can only support 702 possibilities!")
 
-        index = int(index)
+        a = int(index) + 1
 
-        string = ''
-        while index >= 0:
-            if index < len(VarFactory.letters):
-                string = string + VarFactory.letters[index]
-                break
+        if a < 27:
+            return chr(a + 96)
 
-            index_for_this_letter = int(math.floor(index / len(VarFactory.letters))) - 1
-            index = index % len(VarFactory.letters)
-            string = string + VarFactory.letters[index_for_this_letter]
+        b = 0
+        while a > 26:
+            b += 1
+            a = a - 26
 
-        return string
+        b = chr(b + 96)
+        a = chr(a + 96)
+        return b + a

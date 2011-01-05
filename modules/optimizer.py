@@ -372,13 +372,25 @@ class Optimizer(object):
         classes.sort(key = itemgetter(1), reverse=True)
 
         for class_name in classes:
-            self.class_map[class_name[0]] = "." + VarFactory.getNext("class")
+            small_class = VarFactory.getNext("class")
+
+            # adblock extensions may block class "ad"
+            if small_class == "ad":
+                small_class = VarFactory.getNext("class")
+
+            self.class_map[class_name[0]] = "." + small_class
 
         ids = self.id_counter.items()
         ids.sort(key = itemgetter(1), reverse=True)
 
         for id in ids:
-            self.id_map[id[0]] = "#" + VarFactory.getNext("id")
+            small_id = VarFactory.getNext("id")
+
+            # adblock extensions may block id "ad"
+            if small_id == "ad":
+                small_id = VarFactory.getNext("id")
+
+            self.id_map[id[0]] = "#" + small_id
 
     def incrementIdCounter(self, name):
         """called for every time an id is added to increment the bytes we will save
