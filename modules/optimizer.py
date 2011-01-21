@@ -763,7 +763,7 @@ class Optimizer(object):
         list
 
         """
-        return re.compile(r'\<style.*?\>(.*?)\<\/style\>', re.DOTALL).findall(html)
+        return re.compile(r'\<style.*?\>(.*)\<\/style\>', re.DOTALL).findall(html)
 
     def replaceCss(self, css):
         """single call to handle replacing ids and classes
