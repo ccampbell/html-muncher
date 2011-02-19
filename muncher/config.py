@@ -103,7 +103,7 @@ class Config(object):
 
         """
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings", "verbose", "js-manifest=", "rewrite-constants"])
+            opts, args = getopt.getopt(sys.argv[1:], "", ["css=", "views=", "html=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings", "verbose", "js-manifest=", "rewrite-constants"])
         except:
             Muncher.showUsage()
 
@@ -114,7 +114,7 @@ class Config(object):
                 Muncher.showUsage()
             elif key == "--css":
                 self.setCssFiles(value)
-            elif key == "--views":
+            elif key == "--views" or key == "--html":
                 views_set = True
                 self.setViewFiles(value)
             elif key == "--js":
