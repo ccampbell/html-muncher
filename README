@@ -45,7 +45,7 @@ it will be rewritten as
  INSTALLATION
 --------------
 
-easy_install http://htmlmuncher.com/htmlmuncher-1.0-py2.6.egg
+easy_install http://htmlmuncher.com/htmlmuncher.egg
 
 OR:
 
@@ -55,27 +55,13 @@ python setup.py install
 
 
 --------------
- ARGUMENTS
+ USAGE
 --------------
+http://htmlmuncher.com/#usage
 
-REQUIRED:
---views {path/to/views}      html files to rewrite (comma separated list of directories and files)
+OR:
 
-OPTIONAL:
---css {path/to/css}          css files to rewrite (comma separated list of directories and files)
---js {path/to/js}            js files to rewrite (comma separated list of directories and files)
---framework                  name of js framework to use for selectors (currently only jquery or mootools)
---view-ext {extension}       sets the extension to look for in the view directory (defaults to html)
---ignore {classes,ids}       comma separated list of classes or ids to ignore when rewriting css (ie .sick_class,#sweet_id)
---selectors                  comma separated custom selectors using css selectors
-                             for example if you have $.qs("#test .div") this param would be qs
---id-selectors               comma separated id selectors with strings
-                             for example if you are using .addId("test") this param would be addId
---class-selectors            comma separated class selectors with strings
-                             for example if you have selectClass("my_class") this param would be selectClass
---show-savings               will output how many bytes were saved by munching
---verbose                    output more information while the script runs
---help                       shows this menu
+munch --help
 
 
 --------------
@@ -83,13 +69,13 @@ OPTIONAL:
 --------------
 
 to update a bunch of stylesheets and views:
-munch --css demo/css --views demo/views
+munch --css demo/css --html demo/views
 
 to update a single file with inline styles/javascript:
-munch --views demo/single-file/view-with-inline-styles.html
+munch --html demo/single-file/view-with-inline-styles.html
 
 you can also select specific files:
-munch --css file1.css,file2.css --views view1.html,view2.html
+munch --css file1.css,file2.css --html view1.html,view2.html
 
 or you can mix and match files and directories
-munch --css /my/css/directory,global.css --views /view/directory1,/view/directory2,/view/directory3,template.html
+munch --css /my/css/directory,global.css --html /view/directory1,/view/directory2,/view/directory3,template.html
