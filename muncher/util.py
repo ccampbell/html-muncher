@@ -168,3 +168,11 @@ class Util:
         file = open(path, "w")
         file.write(contents)
         file.close()
+
+    @staticmethod
+    def keyInTupleList(key, tuple_list):
+        """checks a list of tuples for the given key"""
+        for tuple in tuple_list:
+            if tuple[0] == key:
+                return True
+        return False
