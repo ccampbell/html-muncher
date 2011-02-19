@@ -371,26 +371,28 @@ class Muncher(object):
         classes = self.class_counter.items()
         classes.sort(key = itemgetter(1), reverse=True)
 
-        for class_name in classes:
-            small_class = VarFactory.getNext("class")
+        for class_name, savings in classes:
+            small_class = "." + VarFactory.getNext("class")
 
-            # adblock extensions may block class "ad"
-            if small_class == "ad":
-                small_class = VarFactory.getNext("class")
+            # adblock extensions may block class "ad" so we should never generate it
+            # also if the generated class already exists as a class to be processed
+            # we can't use it or bad things will happen
+            while small_class == ".ad" or Util.keyInTupleList(small_class, classes):
+                small_class = "." + VarFactory.getNext("class")
 
-            self.class_map[class_name[0]] = "." + small_class
+            self.class_map[class_name] = small_class
 
         ids = self.id_counter.items()
         ids.sort(key = itemgetter(1), reverse=True)
 
-        for id in ids:
-            small_id = VarFactory.getNext("id")
+        for id, savings in ids:
+            small_id = "#" + VarFactory.getNext("id")
 
-            # adblock extensions may block id "ad"
-            if small_id == "ad":
-                small_id = VarFactory.getNext("id")
+            # same holds true for ids as classes
+            while small_id == "#ad" or Util.keyInTupleList(small_id, ids):
+                small_id = "#" + VarFactory.getNext("id")
 
-            self.id_map[id[0]] = "#" + small_id
+            self.id_map[id] = small_id
 
     def incrementIdCounter(self, name):
         """called for every time an id is added to increment the bytes we will save
