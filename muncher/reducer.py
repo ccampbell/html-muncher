@@ -1,5 +1,5 @@
 # from pyquery import PyQuery as pq
-from optimizer import Optimizer
+from muncher import Muncher
 from util import Util
 from varfactory import VarFactory
 
@@ -20,7 +20,7 @@ class ChainReducer(object):
     def findChains(self):
         for selector in self.getAllCssSelectors():
             self.addChain(selector)
-        
+
         for selector in self.getAllJsSelectors():
             self.addChain(selector)
 
@@ -30,7 +30,7 @@ class ChainReducer(object):
         chains = chain.split(",")
         for chain in chains:
             bits = chain.split(" ")
-        
+
             if len(bits) > 1 and chain not in self.chains:
                 self.chains[chain] = "." + VarFactory.getNext("class")
 
@@ -38,22 +38,22 @@ class ChainReducer(object):
         css_blocks = []
         for file in self.config.getOptimizedViewFiles():
             css = Util.fileGetContents(file)
-            blocks = Optimizer.getCssBlocks(css)
+            blocks = Muncher.getCssBlocks(css)
             for block in blocks:
                 css_blocks.append(block)
-        
+
         return css_blocks
-    
+
     def getAllJsSelectors(self):
         js_selectors = []
         for file in self.config.getOptimizedViewFiles():
             js = Util.fileGetContents(file)
-            selectors = Optimizer.getJsSelectors(js)
+            selectors = Muncher.getJsSelectors(js)
             for selector in selectors:
                 js_selectors.append(selector[3])
-        
+
         return js_selectors
-    
+
     def getAllCssSelectors(self):
         css_selectors = []
         for block in self.getCssBlocks():
@@ -61,9 +61,9 @@ class ChainReducer(object):
             for line in lines:
                 if "{" in line:
                     css_selectors.append(line.lstrip(" ").rstrip("{").rstrip(" "))
-        
+
         return css_selectors
-            
+
     def replaceViews(self):
         for file in self.config.getOptimizedViewFiles():
             html = Util.fileGetContents(file)
@@ -89,10 +89,10 @@ class ChainReducerSingleFile(ChainReducer):
             contents = contents.replace("('" + key + "')", "('" + value + "')")
 
         Util.filePutContents(self.config.single_file_opt_path, contents)
-        
+
     def run(self):
         print "reducer is mad buggy ... skipping for now"
         # self.findChains()
         # self.replaceCssAndJavascript()
         # self.replaceViews()
-            
+

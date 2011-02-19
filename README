@@ -1,9 +1,8 @@
-=============
+--------------
   ABOUT
-=============
+--------------
 
-html-muncher is a python utility that converts css class names and ids to simpler names for making the file size smaller and obfuscating your css code
-it also converts corresponding html and javascript class references
+HTML Muncher is a Python utility that rewrites CSS, HTML, and JavaScript files in order to save precious bytes and obfuscate your code
 
 if your stylesheet starts out looking like this:
 
@@ -41,9 +40,23 @@ it will be rewritten as
     padding: 5px;
 }
 
-=============
-  ARGUMENTS
-=============
+
+--------------
+ INSTALLATION
+--------------
+
+easy_install http://htmlmuncher.com/htmlmuncher-1.0-py2.6.egg
+
+OR:
+
+download the source from http://github.com/ccampbell/html-muncher
+cd html-muncher
+python setup.py install
+
+
+--------------
+ ARGUMENTS
+--------------
 
 REQUIRED:
 --views {path/to/views}      html files to rewrite (comma separated list of directories and files)
@@ -64,21 +77,19 @@ OPTIONAL:
 --verbose                    output more information while the script runs
 --help                       shows this menu
 
-=============
-  EXAMPLES
-=============
+
+--------------
+ EXAMPLES
+--------------
 
 to update a bunch of stylesheets and views:
-cd html-muncher
-./optimize.py --css demo/css --views demo/views
+munch --css demo/css --views demo/views
 
 to update a single file with inline styles/javascript:
-cd html-muncher
-./optimize.py --views demo/single-file/view-with-inline-styles.html
+munch --views demo/single-file/view-with-inline-styles.html
 
 you can also select specific files:
-cd html-muncher
-./optimize.py --css file1.css,file2.css --views view1.html,view2.html
+munch --css file1.css,file2.css --views view1.html,view2.html
 
 or you can mix and match files and directories
-./optimize.py --css /my/css/directory,global.css --views /view/directory1,/view/directory2,/view/directory3,template.html
+munch --css /my/css/directory,global.css --views /view/directory1,/view/directory2,/view/directory3,template.html

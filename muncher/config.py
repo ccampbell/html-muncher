@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import sys, getopt
-from optimizer import Optimizer
+from muncher import Muncher
 
 class Config(object):
     """configuration object for handling all config options for html-muncher"""
@@ -89,7 +89,8 @@ class Config(object):
     def setFramework(self, name):
         self.framework = name.lower()
         if self.framework == "jquery":
-            self.custom_selectors.append("$").append("jQuery")
+            self.custom_selectors.append("$")
+            self.custom_selectors.append("jQuery")
         elif self.framework == "mootools":
             self.id_selectors.append("$")
             self.custom_selectors.append("getElement")
@@ -104,13 +105,13 @@ class Config(object):
         try:
             opts, args = getopt.getopt(sys.argv[1:], "", ["css=", "views=", "js=", "help", "view-ext=", "ignore=", "framework=", "selectors=", "class-selectors=", "id-selectors=", "compress-html", "show-savings", "verbose", "js-manifest=", "rewrite-constants"])
         except:
-            Optimizer.showUsage()
+            Muncher.showUsage()
 
         views_set = False
 
         for key, value in opts:
             if key == "--help":
-                Optimizer.showUsage()
+                Muncher.showUsage()
             elif key == "--css":
                 self.setCssFiles(value)
             elif key == "--views":
@@ -143,4 +144,4 @@ class Config(object):
 
         # you have to at least have a view
         if views_set is False:
-            Optimizer.showUsage()
+            Muncher.showUsage()

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright 2010 Craig Campbell
 #
@@ -15,10 +15,10 @@
 # limitations under the License.
 
 import sys
-from modules.config import Config
-from modules.optimizer import Optimizer
+from muncher.config import Config
+from muncher.muncher import Muncher
 
 config = Config()
 config.processArgs()
-optimizer = Optimizer(config)
-optimizer.run()
+muncher = Muncher(config)
+muncher.run()

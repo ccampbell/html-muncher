@@ -19,7 +19,7 @@ from util import Util
 from varfactory import VarFactory
 from sizetracker import SizeTracker
 
-class Optimizer(object):
+class Muncher(object):
     def __init__(self, config):
         """constructor
 
@@ -36,15 +36,15 @@ class Optimizer(object):
     @staticmethod
     def showUsage():
         """shows usage information for this script"""
-        print "\n======================"
-        print "html-muncher or html om nom nom"
-        print "======================"
+        print "\n---------------------------------"
+        print " html-muncher or html om nom nom"
+        print "---------------------------------"
 
-        print "\nUSAGE:"
-        print "./optimize.py --css file1.css,/path/to/css1,file2.css,file3.css --views /path/to/views1,file1.html,/path/to/views2/,file3.html --js main.js,/path/to/js"
-        print "\nREQUIRED ARGUMENTS:"
+        print "\n" + '\033[91m' + "USAGE:" + '\033[0m'
+        print "munch --css file1.css,/path/to/css1,file2.css,file3.css --views /path/to/views1,file1.html,/path/to/views2/,file3.html --js main.js,/path/to/js"
+        print "\n" + '\033[91m' + "REQUIRED ARGUMENTS:" + '\033[0m'
         print "--views {path/to/views}      html files to rewrite (comma separated list of directories and files)"
-        print "\nOPTIONAL ARGUMENTS:"
+        print "\n" + '\033[91m' + "OPTIONAL ARGUMENTS:" + '\033[0m'
         print "--css {path/to/css}          css files to rewrite (comma separated list of directories and files)"
         print "--js {path/to/js}            js files to rewrite (comma separated list of directories and files)"
         print "--framework                  name of js framework to use for selectors (currently only jquery or mootools)"
@@ -638,7 +638,7 @@ class Optimizer(object):
         """replaces classes and ids with new values in an html file
 
         Uses:
-        Optimizer.replaceHtml
+        Muncher.replaceHtml
 
         Arguments:
         path -- string path to file to optimize
